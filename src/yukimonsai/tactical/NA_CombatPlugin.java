@@ -509,7 +509,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
     public void renderInUICoords(ViewportAPI viewport) {
         if (YukiTacticalPlugin.hasLunaLib && NA_SettingsListener.na_combatui_enable) {
             CombatEngineAPI engine = Global.getCombatEngine();
-            if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
+            if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && engine.getCombatUI() != null && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
                     || engine.isPaused()
             )) {
                 drawNightcrossTactical(false, null, null, 0);
