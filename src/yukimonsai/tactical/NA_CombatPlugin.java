@@ -210,7 +210,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         double sineAmt = Math.sin(9f * engine.getTotalElapsedTime(true) % (2*Math.PI));
 
         if (!NA_SettingsListener.na_combatui_nocontrol) {
-            if (Global.getCombatEngine().getPlayerShip().getShipTarget() != null) {
+            if (Global.getCombatEngine().getPlayerShip().getShipTarget() != null && Global.getCombatEngine().getPlayerShip().getShipTarget().getName() != null) {
                 MagicUI.addText(Global.getCombatEngine().getPlayerShip(), Global.getCombatEngine().getPlayerShip().getShipTarget().getName(), TEXT_COLOR_HIGHLIGHT, new Vector2f(XX+12, YY + TEXTOFF + TEXTHEIGHT), false);
             }
             if (input && side == 0) {
@@ -265,6 +265,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
 
         for (List<DeployedFleetMemberAPI> list : display) {
+            if (list.isEmpty()) continue;
             for (DeployedFleetMemberAPI member : list) {
                 if (input) {
                     if (e.getX() > XX && e.getX() < XX + w
