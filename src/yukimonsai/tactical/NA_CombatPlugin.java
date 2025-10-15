@@ -17,6 +17,8 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
     // TODO add optional display for other side (for tournaments maybe?)
 
+    public static boolean toggle = true;
+
     public static Color TEXT_COLOR_OFF = new Color(255, 255, 255, 115);
     public static Color TEXT_COLOR_ON = new Color(255, 255, 255, 255);
     public static Color TEXT_COLOR_HIGHLIGHT = new Color(255, 255, 255, 180);
@@ -42,24 +44,49 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
     @Override
     public void processInputPreCoreControls(float amount, List<InputEventAPI> events) {
-        if (YukiTacticalPlugin.hasLunaLib && NA_SettingsListener.na_combatui_enable && !NA_SettingsListener.na_combatui_nocontrol) {
-            CombatEngineAPI engine = Global.getCombatEngine();
-            if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
-                    || engine.isPaused()
-            )) {
-                for (InputEventAPI e: events) {
-                    if (e.isMouseDownEvent()) {
-                        if (drawNightcrossTactical(true, e, events, 0)) return;
-                        if (drawNightcrossTactical(true, e, events, 1)) return;
+        CombatEngineAPI engine = Global.getCombatEngine();
+        if (YukiTacticalPlugin.hasLunaLib) {
+            if (NA_SettingsListener.na_combatui_hotkey > 0) {
+                if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
+                        || engine.isPaused()
+                )) {
+                    for (InputEventAPI e: events) {
+                        if (e.isKeyboardEvent()) {
+                            if (e.getEventValue() == NA_SettingsListener.na_combatui_hotkey) {
+                                toggle = !toggle;
+                                e.consume();
+                                Global.getSoundPlayer().playUISound("ui_drone_mode_freeroam", 1f, 1f);
+                            }
+                        }
 
-                        // any clicks outside will reset the command mode
-                        commandMode = CommandMode.NONE;
                     }
 
                 }
+            }
 
+
+            if (!toggle) return;
+            if (NA_SettingsListener.na_combatui_enable && !NA_SettingsListener.na_combatui_nocontrol) {
+                if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
+                        || engine.isPaused()
+                )) {
+                    for (InputEventAPI e: events) {
+                        if (e.isMouseDownEvent()) {
+                            if (drawNightcrossTactical(true, e, events, 0)) return;
+                            if (drawNightcrossTactical(true, e, events, 1)) return;
+
+                            // any clicks outside will reset the command mode
+                            commandMode = CommandMode.NONE;
+                        }
+
+                    }
+
+                }
             }
         }
+
+
+
     }
 
     @Override
@@ -75,6 +102,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
     public boolean drawNightcrossTactical(boolean input, InputEventAPI e, List<InputEventAPI> events, int side) {
         CombatEngineAPI engine = Global.getCombatEngine();
 
+        if (!toggle) return false;
         if (engine.isCombatOver() || !((engine.isMission() && engine.getMissionId() != null) || engine.isInCampaign() || engine.isSimulation())) return false;
         if (e != null && e.isConsumed()) return false;
 
