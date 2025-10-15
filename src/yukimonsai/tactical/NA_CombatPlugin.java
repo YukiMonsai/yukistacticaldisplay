@@ -182,6 +182,9 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         double sineAmt = Math.sin(9f * engine.getTotalElapsedTime(true) % (2*Math.PI));
 
         if (!NA_SettingsListener.na_combatui_nocontrol) {
+            if (Global.getCombatEngine().getPlayerShip().getShipTarget() != null) {
+                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), Global.getCombatEngine().getPlayerShip().getShipTarget().getName(), TEXT_COLOR_HIGHLIGHT, new Vector2f(XX+12, YY + TEXTOFF + TEXTHEIGHT), false);
+            }
             if (input && side == 0) {
                 if (e.getX() > XX && e.getX() < XX + textSpacing
                         && e.getY() > YY + TEXTOFF - TEXTHEIGHT && e.getY() < YY + TEXTOFF) {
@@ -222,7 +225,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                     hl_snd = true;
                 }
 
-                if (!NA_SettingsListener.na_combatui_copyright)
+                if (!NA_SettingsListener.na_combatui_copyright && Global.getCombatEngine().getPlayerShip().getShipTarget() == null)
                     MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Nightcross Tactical Display", textColor_OFF, new Vector2f(XX+12, YY + TEXTOFF + TEXTHEIGHT), false);
                 MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Retreat", commandMode == CommandMode.RETREAT_COMMAND ? textColor_ON : hl_ret ? textColor_HL : textColor_OFF, new Vector2f(XX, YY + TEXTOFF), false);
                 MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Escort", commandMode == CommandMode.ESCORT_COMMAND ? textColor_ON : hl_esc ? textColor_HL : textColor_OFF, new Vector2f(XX + textSpacing, YY + TEXTOFF), false);
