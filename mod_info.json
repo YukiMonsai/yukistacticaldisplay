@@ -1,0 +1,17 @@
+{
+    "id":"yukistacticaldisplay", # For the convenience of troubleshooters, include your name and the mod name, not just an acronym.
+	"name":"Yuki's Tactical Display", # Displayed to the player
+	"author":"YukiMonsai",
+    "utility":"false",
+	"version":"1.0",
+	"description":"Adds a Space-Pirates-and-Zombies style list with all your ships (and enemy ships optionally)",
+    "gameVersion": "0.98a",
+  	"jars":["jars/yukistacticaldisplay.jar"],
+  	"modPlugin":"yukimonsai.tactical.YukiTacticalPlugin",
+    "dependencies": [
+      {
+        "id": "MagicLib",
+        "name": "MagicLib"
+      },
+    ]
+}

@@ -1,0 +1,11 @@
+{
+	
+	"plugins": {
+		"NA_CombatPlugin":"yukimonsai.tactical.NA_CombatPlugin",
+	},
+	"graphics":{
+		"icons": {
+			"na_icon_select":"graphics/icons/na_icon_select.png",
+		},
+	},
+}

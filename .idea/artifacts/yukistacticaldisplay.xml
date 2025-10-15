@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="yukistacticaldisplay">
+    <output-path>$PROJECT_DIR$/jars</output-path>
+    <root id="archive" name="yukistacticaldisplay.jar">
+      <element id="module-output" name="YukisTacticalDisplay" />
+    </root>
+  </artifact>
+</component>
