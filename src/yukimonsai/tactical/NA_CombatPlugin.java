@@ -47,11 +47,11 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         CombatEngineAPI engine = Global.getCombatEngine();
         if (YukiTacticalPlugin.hasLunaLib) {
             if (NA_SettingsListener.na_combatui_hotkey > 0) {
-                if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
+                if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && engine.getCombatUI() != null && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
                         || engine.isPaused()
                 )) {
                     for (InputEventAPI e: events) {
-                        if (e.isKeyboardEvent()) {
+                        if (e.isKeyDownEvent()) {
                             if (e.getEventValue() == NA_SettingsListener.na_combatui_hotkey) {
                                 toggle = !toggle;
                                 e.consume();
@@ -67,7 +67,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
             if (!toggle) return;
             if (NA_SettingsListener.na_combatui_enable && !NA_SettingsListener.na_combatui_nocontrol) {
-                if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
+                if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && engine.getCombatUI() != null && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
                         || engine.isPaused()
                 )) {
                     for (InputEventAPI e: events) {
@@ -206,27 +206,31 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         float XX = XXstart;
         float TEXTHEIGHT = 20;
         float textSpacing = side == 0 ? 100 : -100;
+        float TEXTXOFF = side == 0 ? 0 : 1.5f*textSpacing;
+        float TITLEXOFF = side == 0 ? 12 : 12;
         float TEXTOFF = 20 + h;
         double sineAmt = Math.sin(9f * engine.getTotalElapsedTime(true) % (2*Math.PI));
 
         if (!NA_SettingsListener.na_combatui_nocontrol) {
-            if (Global.getCombatEngine().getPlayerShip().getShipTarget() != null && Global.getCombatEngine().getPlayerShip().getShipTarget().getName() != null) {
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), Global.getCombatEngine().getPlayerShip().getShipTarget().getName(), TEXT_COLOR_HIGHLIGHT, new Vector2f(XX+12, YY + TEXTOFF + TEXTHEIGHT), false);
+            if (Global.getCombatEngine().getPlayerShip().getShipTarget() != null
+                    && Global.getCombatEngine().getPlayerShip().getShipTarget().getOwner() == side
+                    && Global.getCombatEngine().getPlayerShip().getShipTarget().getName() != null) {
+                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), Global.getCombatEngine().getPlayerShip().getShipTarget().getName(), TEXT_COLOR_HIGHLIGHT, new Vector2f(XX+TEXTXOFF+TITLEXOFF, YY + TEXTOFF + TEXTHEIGHT), false);
             }
             if (input && side == 0) {
-                if (e.getX() > XX && e.getX() < XX + textSpacing
+                if (e.getX() > XX+TEXTXOFF && e.getX() < XX+TEXTXOFF + textSpacing
                         && e.getY() > YY + TEXTOFF - TEXTHEIGHT && e.getY() < YY + TEXTOFF) {
                     commandMode = CommandMode.RETREAT_COMMAND;
                     Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
                     e.consume(); events.remove(e);
                     return true;
-                } else if (e.getX() > XX + textSpacing && e.getX() < XX + 2 * textSpacing
+                } else if (e.getX() > XX+TEXTXOFF + textSpacing && e.getX() < XX+TEXTXOFF + 2 * textSpacing
                         && e.getY() > YY + TEXTOFF - TEXTHEIGHT && e.getY() < YY + TEXTOFF) {
                     commandMode = CommandMode.ESCORT_COMMAND;
                     Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
                     e.consume(); events.remove(e);
                     return true;
-                } else if (e.getX() > XX + 2*textSpacing && e.getX() < XX + 3 * textSpacing
+                } else if (e.getX() > XX+TEXTXOFF + 2*textSpacing && e.getX() < XX+TEXTXOFF + 3 * textSpacing
                         && e.getY() > YY + TEXTOFF - TEXTHEIGHT && e.getY() < YY + TEXTOFF) {
                     commandMode = CommandMode.SEARCHANDDESTROY_COMMAND;
                     Global.getSoundPlayer().playUISound("ui_button_patrol", 1f, 1f);
@@ -242,22 +246,23 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 boolean hl_esc = false;
                 boolean hl_snd = false;
 
-                if (Global.getSettings().getMouseX() > XX && Global.getSettings().getMouseX() < XX + textSpacing
+                if (Global.getSettings().getMouseX() > XX+TEXTXOFF && Global.getSettings().getMouseX() < XX+TEXTXOFF + textSpacing
                         && Global.getSettings().getMouseY() > YY + TEXTOFF - TEXTHEIGHT && Global.getSettings().getMouseY() < YY + TEXTOFF) {
                     hl_ret = true;
-                } else if (Global.getSettings().getMouseX() > XX + textSpacing && Global.getSettings().getMouseX() < XX + 2 * textSpacing
+                } else if (Global.getSettings().getMouseX() > XX+TEXTXOFF + textSpacing && Global.getSettings().getMouseX() < XX+TEXTXOFF + 2 * textSpacing
                         && Global.getSettings().getMouseY() > YY + TEXTOFF - TEXTHEIGHT && Global.getSettings().getMouseY() < YY + TEXTOFF) {
                     hl_esc = true;
-                } else if (Global.getSettings().getMouseX() > XX + 2*textSpacing && Global.getSettings().getMouseX() < XX + 3 * textSpacing
+                } else if (Global.getSettings().getMouseX() > XX+TEXTXOFF + 2*textSpacing && Global.getSettings().getMouseX() < XX+TEXTXOFF + 3 * textSpacing
                         && Global.getSettings().getMouseY() > YY + TEXTOFF - TEXTHEIGHT && Global.getSettings().getMouseY() < YY + TEXTOFF) {
                     hl_snd = true;
                 }
 
-                if (!NA_SettingsListener.na_combatui_copyright && Global.getCombatEngine().getPlayerShip().getShipTarget() == null)
-                    MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Nightcross Tactical Display", textColor_OFF, new Vector2f(XX+12, YY + TEXTOFF + TEXTHEIGHT), false);
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Retreat", commandMode == CommandMode.RETREAT_COMMAND ? textColor_ON : hl_ret ? textColor_HL : textColor_OFF, new Vector2f(XX, YY + TEXTOFF), false);
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Escort", commandMode == CommandMode.ESCORT_COMMAND ? textColor_ON : hl_esc ? textColor_HL : textColor_OFF, new Vector2f(XX + textSpacing, YY + TEXTOFF), false);
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "S&D", commandMode == CommandMode.SEARCHANDDESTROY_COMMAND ? textColor_ON : hl_snd ? textColor_HL : textColor_OFF, new Vector2f(XX + 2 * textSpacing, YY + TEXTOFF), false);
+                if (NA_SettingsListener.na_combatui_copyright && Global.getCombatEngine().getPlayerShip().getShipTarget() == null
+                    || NA_SettingsListener.na_combatui_copyright && Global.getCombatEngine().getPlayerShip().getShipTarget().getOwner() != 0)
+                    MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Nightcross Tactical Display", textColor_OFF, new Vector2f(XX+TEXTXOFF+TITLEXOFF, YY + TEXTOFF + TEXTHEIGHT), false);
+                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Retreat", commandMode == CommandMode.RETREAT_COMMAND ? textColor_ON : hl_ret ? textColor_HL : textColor_OFF, new Vector2f(XX+TEXTXOFF, YY + TEXTOFF), false);
+                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Escort", commandMode == CommandMode.ESCORT_COMMAND ? textColor_ON : hl_esc ? textColor_HL : textColor_OFF, new Vector2f(XX+TEXTXOFF + textSpacing, YY + TEXTOFF), false);
+                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "S&D", commandMode == CommandMode.SEARCHANDDESTROY_COMMAND ? textColor_ON : hl_snd ? textColor_HL : textColor_OFF, new Vector2f(XX+TEXTXOFF + 2 * textSpacing, YY + TEXTOFF), false);
 
             }
         }
