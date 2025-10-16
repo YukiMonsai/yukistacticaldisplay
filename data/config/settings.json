@@ -6,6 +6,10 @@
 	"graphics":{
 		"icons": {
 			"na_icon_select":"graphics/icons/na_icon_select.png",
+			"ytd_armor_l":"graphics/icons/ytd_armor_l.png",
+			"ytd_armor_r":"graphics/icons/ytd_armor_r.png",
+			"ytd_armor_u":"graphics/icons/ytd_armor_u.png",
+			"ytd_armor_d":"graphics/icons/ytd_armor_d.png",
 		},
 	},
 }

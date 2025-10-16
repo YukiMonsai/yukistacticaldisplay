@@ -5,6 +5,7 @@ import com.fs.starfarer.api.combat.*;
 import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.input.InputEventType;
 import com.fs.starfarer.api.mission.FleetSide;
+import com.fs.starfarer.api.util.IntervalUtil;
 import com.fs.starfarer.combat.CombatState;
 
 import java.util.ArrayList;
@@ -26,6 +27,14 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         DisplayDrawListeners.add(new BaseDisplayDrawListenerImpl());
     }
 
+    public static float uiRefreshTime = 0.1f;
+    public static boolean refreshUI = true;
+    public static float lastUIUpdateTime = 0;
+    public static IntervalUtil uiRefreshTimer = new IntervalUtil(uiRefreshTime, uiRefreshTime);
+
+    public static float dataRefreshTime = 0.1f;
+    public static boolean refreshData = true;
+    public static IntervalUtil dataRefreshTimer = new IntervalUtil(dataRefreshTime, dataRefreshTime);
 
     public enum InputType {
         NO_INPUT,
@@ -129,7 +138,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 )) {
                     InputEventAPI cancel = null;
                     for (InputEventAPI e: events) {
-                        if (!e.isConsumed() && (e.isMouseDownEvent() || (e.isMouseMoveEvent() && mouseDown))) {
+                        if (!e.isConsumed() && ((e.isLMBDownEvent()) || (e.isMouseMoveEvent() && mouseDown))) {
                             // any clicks outside will reset the command mode
                             if (drawYukiTacticalDisplay(e.getEventType().equals(InputEventType.MOUSE_DOWN) ? InputType.CLICK : InputType.HOLD, e, events, 0)) {
                                 cancel = e;
@@ -166,6 +175,10 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             //((CombatState) Global.getCombatEngine()).setAutopilot(true);
             autoPilotWasOn = false;
         }
+        if (dataRefreshTimer.intervalElapsed()) {
+            dataRefreshTimer.setElapsed(0);
+            refreshData = true;
+        } else dataRefreshTimer.advance(amount);
     }
 
     @Override
@@ -233,6 +246,8 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         boolean flip = side == 1;
         boolean flipv = NA_SettingsListener.na_combatui_flipv;
         if (NA_SettingsListener.na_combatui_flip) flip = !flip;
+
+        if (side == 1 && input != InputType.NO_INPUT && !NA_SettingsListener.na_combatui_enemy) return false;
 
 
         // get
@@ -303,6 +318,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             }
         }
 
+
         for (List<DeployedFleetMemberAPI> list : display) {
             if (list.isEmpty()) continue;
             for (DeployedFleetMemberAPI member : list) {
@@ -318,7 +334,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                         }
                     }
                 } else {
-                    if (iconMap.containsKey(member)) iconMap.get(member).render(flip, flipv, XX, YY, w, h, assignmentList, true, sineAmt);
+                    if (iconMap.containsKey(member)) iconMap.get(member).render(flip, flipv, XX, YY, w, h, assignmentList, true, sineAmt, refreshUI, refreshData);
                 }
 
                 XX += Xspacing;
@@ -331,6 +347,13 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
     @Override
     public void renderInUICoords(ViewportAPI viewport) {
+
+        if (uiRefreshTimer.intervalElapsed()) {
+            uiRefreshTimer.setElapsed(0);
+            refreshUI = true;
+        } else uiRefreshTimer.advance(Global.getCombatEngine().getTotalElapsedTime(true) - lastUIUpdateTime);
+        lastUIUpdateTime = Global.getCombatEngine().getTotalElapsedTime(true);
+
         if (YukiTacticalPlugin.hasLunaLib && NA_SettingsListener.na_combatui_enable) {
             CombatEngineAPI engine = Global.getCombatEngine();
             if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && engine.getCombatUI() != null && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
@@ -342,6 +365,9 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
             }
         }
+
+        refreshUI = false;
+        refreshData = false;
     }
 
     @Override

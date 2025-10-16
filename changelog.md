@@ -3,6 +3,7 @@
 - Added ability to flip sides and adjust difference in offset between enemy and player displays
 - Fixed a bug where allied ships would get added to the player's display
 - Clicking the display will no longer break autopilot (if control is on)
+- Made the PPT bar and CR bar shared-though the color will change based on malfunction status. Once the ship runs out of PPT the bar becoems a CR bar.
 
 1.0.3
 - Fixed another CTD caused by the last update

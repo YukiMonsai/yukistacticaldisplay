@@ -20,7 +20,10 @@ public class NA_SettingsListener implements LunaSettingsListener {
     public static boolean na_combatui_noenemyinfo = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_noenemyinfo");
     public static boolean na_combatui_flip = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_flip");
     public static boolean na_combatui_flipv = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_flipv");
+    public static boolean na_combatui_armor = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_armor");
+    public static boolean na_combatui_noenemyarmor = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_noenemyarmor");
     public static int na_combatui_hotkey = LunaSettings.getInt("yukistacticaldisplay", "na_combatui_hotkey");
+    public static float na_combatui_armorAlpha = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_armorAlpha");
 
 
 
@@ -66,5 +69,8 @@ public class NA_SettingsListener implements LunaSettingsListener {
         na_combatui_vspace = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_vspace");
         na_combatui_hspace = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_hspace");
         na_combatui_hotkey = LunaSettings.getInt("yukistacticaldisplay", "na_combatui_hotkey");
+        na_combatui_armor = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_armor");
+        na_combatui_noenemyarmor = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_noenemyarmor");
+        na_combatui_armorAlpha = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_armorAlpha");
     }
 }

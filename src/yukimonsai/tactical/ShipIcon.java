@@ -18,7 +18,7 @@ public interface ShipIcon {
     AssignmentTargetAPI getAssignmentTarget();
 
     float getSortValue();
-    void render(boolean flip, boolean flipv, float XX, float YY, float w, float h, HashMap<String, CombatFleetManagerAPI.AssignmentInfo> assignmentList, boolean withText, float sineAmt);
+    void render(boolean flip, boolean flipv, float XX, float YY, float w, float h, HashMap<String, CombatFleetManagerAPI.AssignmentInfo> assignmentList, boolean withText, float sineAmt, boolean UIUpdate, boolean DataUpdate);
     boolean handleInput(boolean flip, boolean flipv, float XX, float YY, float w, float h, HashMap<String, CombatFleetManagerAPI.AssignmentInfo> assignmentList, InputEventAPI e);
     boolean handleHold(boolean flip, boolean flipv, float XX, float YY, float w, float h, HashMap<String, CombatFleetManagerAPI.AssignmentInfo> assignmentList, InputEventAPI e);
 
