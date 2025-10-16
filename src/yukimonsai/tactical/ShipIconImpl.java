@@ -34,7 +34,9 @@ public class ShipIconImpl implements ShipIcon {
     public static Color SND_COLOR = new Color(250, 39, 190);
     public static Color RETREAT_COLOR = new Color(250, 222, 39);
     public static float ARMOR_THRESH = 50;
-    public static float ascalemult = 1.25f;
+    public static Color GOOD_CR_COLOR = new Color(150, 255, 180);
+    public static Color PPT_COLOR = new Color(225, 255, 255);
+    public static float ascalemult = 1.0f;
 
 
     public ShipIconImpl(DeployedFleetMemberAPI member) {
@@ -239,7 +241,7 @@ public class ShipIconImpl implements ShipIcon {
                             : new Color(250 - (int)(colorScale * 0.9 * ar), 50 + (int)(colorScale * ar), 50, 220);
 
                     sprite = Global.getSettings().getSprite("icons", "ytd_armor_l");
-                    sprite.setSize(w, h);
+                    sprite.setSize(ascalemult*w, ascalemult*h);
                     sprite.setColor(armorColor);
                     if (armor_l < armorThresh)
                         sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
@@ -256,7 +258,7 @@ public class ShipIconImpl implements ShipIcon {
                             : new Color(250 - (int)(colorScale * 0.9 * ar), 50 + (int)(colorScale * ar), 50, 220);
 
                     sprite = Global.getSettings().getSprite("icons", "ytd_armor_r");
-                    sprite.setSize(w, h);
+                    sprite.setSize(ascalemult*w, ascalemult*h);
                     sprite.setColor(armorColor);
                     if (armor_r < armorThresh)
                         sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
@@ -273,7 +275,7 @@ public class ShipIconImpl implements ShipIcon {
                             : new Color(250 - (int)(colorScale * 1.1 * ar), 25 + (int)(1.1*colorScale * ar), 25, 240);
 
                     sprite = Global.getSettings().getSprite("icons", "ytd_armor_u");
-                    sprite.setSize(w, h);
+                    sprite.setSize(ascalemult*w, ascalemult*h);
                     sprite.setColor(armorColor);
                     if (armor_u < armorThresh)
                         sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
@@ -290,7 +292,7 @@ public class ShipIconImpl implements ShipIcon {
                             : new Color(250 - (int)(colorScale * 0.9 * ar), 50 + (int)(colorScale * ar), 50, 220);
 
                     sprite = Global.getSettings().getSprite("icons", "ytd_armor_d");
-                    sprite.setSize(w, h);
+                    sprite.setSize(ascalemult*w, ascalemult*h);
                     sprite.setColor(armorColor);
                     if (armor_d < armorThresh)
                         sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
@@ -313,21 +315,23 @@ public class ShipIconImpl implements ShipIcon {
                 float crMinorMaj = Global.getSettings().getCRPlugin().getCriticalMalfunctionThreshold(ship.getMutableStats());
 
                 Color fill2 = new Color(
-                        202,
+                        215,
                         ship.getPeakTimeRemaining() < 1 ?
                                 (
                                         cr > crMinorMal ? 200 :
                                                 (cr > crMinorMaj ? 150 : 50)
-                                ) : 197,
+                                ) : 225,
                         ship.getPeakTimeRemaining() < 1 ? (
                                 cr > crMinorMaj ? 100 : 50
                         )
-                                : 197, ship.getPeakTimeRemaining() < 1f ? (int) (200 + 50 * sineAmt) : 255);
+                                : 197, ship.getPeakTimeRemaining() < 1f ? (int) (200 + 50 * sineAmt) : 225);
                 Color border2 = new Color(169, 232, 8, 0); // was 180
                 float crTimeFrac = ship.getPeakTimeRemaining()/
                         (1f + member.getMember().getStats().getPeakCRDuration().computeEffective(ship.getHullSpec().getNoCRLossTime()));
 
-                MagicUI.addBar(ship, crTimeFrac > 0 ? ship.getCurrentCR() : cr, fill2, border2, 0, new Vector2f(XX + w * 0.125f, YY - 3 - SPACE), 4, w*0.75f, false);
+                MagicUI.addBar(ship, cr, fill2, border2, 0, new Vector2f(XX + w * 0.125f, YY - 3 - SPACE), crTimeFrac > 0 ? 3 : 4, w*0.75f, false);
+                if (crTimeFrac > 0)
+                    MagicUI.addBar(ship, crTimeFrac, PPT_COLOR, border2, 0, new Vector2f(XX + w * 0.125f, YY - 6 - SPACE), 1, w*0.75f, false);
             }
 
         } else off = -SPACE;
