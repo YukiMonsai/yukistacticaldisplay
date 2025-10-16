@@ -2,12 +2,11 @@ package yukimonsai.tactical;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.combat.*;
-import com.fs.starfarer.api.graphics.SpriteAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
-import org.lwjgl.util.vector.Vector2f;
-import org.magiclib.util.MagicUI;
+import com.fs.starfarer.api.input.InputEventType;
+import com.fs.starfarer.api.mission.FleetSide;
+import com.fs.starfarer.combat.CombatState;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -17,20 +16,22 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
     public static boolean toggle = true;
 
-    public static Color TEXT_COLOR_OFF = new Color(255, 255, 255, 115);
-    public static Color TEXT_COLOR_ON = new Color(255, 255, 255, 255);
-    public static Color TEXT_COLOR_HIGHLIGHT = new Color(255, 255, 255, 180);
-    public static Color ESCORT_COLOR = new Color(75, 253, 63);
+    public static String title = "Nightcross Tactical Display";
 
-    public static Color ENGAGE_COLOR = new Color(253, 153, 13);
-    public static Color ALERT_COLOR = new Color(253, 49, 13);
-    public static Color CAP_COLOR = new Color(5, 255, 255);
-    public static Color D_COLOR = new Color(14, 148, 253);
-    public static Color YOU_COLOR = new Color(255, 255, 255);
-    public static Color SND_COLOR = new Color(250, 39, 190);
-    public static Color RETREAT_COLOR = new Color(250, 222, 39);
+    public static HashMap<DeployedFleetMemberAPI, ShipIcon> iconMap = new HashMap<DeployedFleetMemberAPI, ShipIcon>();
+
+    public static List<GetShipIconListener> GetShipIconListeners = new ArrayList<GetShipIconListener>();
+    public static List<DisplayDrawListener> DisplayDrawListeners = new ArrayList<DisplayDrawListener>();
+    static {
+        DisplayDrawListeners.add(new BaseDisplayDrawListenerImpl());
+    }
 
 
+    public enum InputType {
+        NO_INPUT,
+        CLICK,
+        HOLD,
+    }
     enum CommandMode {
         RETREAT_COMMAND,
         ESCORT_COMMAND,
@@ -38,10 +39,66 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         NONE,
     }
 
+    public void addGetShipIconListener(GetShipIconListener listener) {
+        GetShipIconListeners.add(listener);
+    }
+    public boolean hasGetShipIconListenerOfClass(Class cls) {
+        for (GetShipIconListener listener : GetShipIconListeners) {
+            if (listener.getClass().equals(cls)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    public GetShipIconListener removeGetShipIconListenerOfClass(Class cls) {
+        GetShipIconListener toDelete = null;
+        for (GetShipIconListener listener : GetShipIconListeners) {
+            if (listener.getClass().equals(cls)) {
+                toDelete = listener;
+                break;
+            }
+        }
+        if (toDelete != null) GetShipIconListeners.remove(toDelete);
+        return toDelete;
+    }
+
+    public void addDisplayDrawListener(DisplayDrawListener listener) {
+        DisplayDrawListeners.add(listener);
+    }
+    public boolean hasDisplayDrawListenerOfClass(Class cls) {
+        for (DisplayDrawListener listener : DisplayDrawListeners) {
+            if (listener.getClass().equals(cls)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    public DisplayDrawListener removeDisplayDrawListenerOfClass(Class cls) {
+        DisplayDrawListener toDelete = null;
+        for (DisplayDrawListener listener : DisplayDrawListeners) {
+            if (listener.getClass().equals(cls)) {
+                toDelete = listener;
+                break;
+            }
+        }
+        if (toDelete != null) DisplayDrawListeners.remove(toDelete);
+        return toDelete;
+    }
+
     public static CommandMode commandMode = CommandMode.NONE;
+    public static boolean mouseDown = false;
 
     @Override
     public void processInputPreCoreControls(float amount, List<InputEventAPI> events) {
+        if (mouseDown) {
+            // jank
+            for (InputEventAPI e: events) {
+                if (!e.isConsumed() && e.isMouseUpEvent()) {
+                    mouseDown = false;
+                    break;
+                }
+            }
+        }
         CombatEngineAPI engine = Global.getCombatEngine();
         if (YukiTacticalPlugin.hasLunaLib) {
             if (NA_SettingsListener.na_combatui_hotkey > 0) {
@@ -65,18 +122,32 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
             if (!toggle) return;
             if (NA_SettingsListener.na_combatui_enable && !NA_SettingsListener.na_combatui_nocontrol) {
+
+
                 if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && engine.getCombatUI() != null && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
                         || engine.isPaused()
                 )) {
+                    InputEventAPI cancel = null;
                     for (InputEventAPI e: events) {
-                        if (!e.isConsumed() && e.isMouseDownEvent()) {
-                            if (drawNightcrossTactical(true, e, events, 0)) return;
-                            if (drawNightcrossTactical(true, e, events, 1)) return;
-
+                        if (!e.isConsumed() && (e.isMouseDownEvent() || (e.isMouseMoveEvent() && mouseDown))) {
                             // any clicks outside will reset the command mode
-                            commandMode = CommandMode.NONE;
+                            if (drawYukiTacticalDisplay(e.getEventType().equals(InputEventType.MOUSE_DOWN) ? InputType.CLICK : InputType.HOLD, e, events, 0)) {
+                                cancel = e;
+                                break;
+                            }
+                            if (drawYukiTacticalDisplay(e.isMouseDownEvent() ? InputType.CLICK : InputType.HOLD, e, events, 1)) {cancel = e; break;}
+
+
+                            if (e.isMouseDownEvent())
+                                commandMode = CommandMode.NONE;
                         }
 
+                    }
+                    if (cancel != null) {
+                        if (cancel.isConsumed())
+                            events.remove(cancel);
+                        if (cancel.isMouseDownEvent()) mouseDown = true;
+                        Global.getCombatEngine().getCombatUI().setDisablePlayerShipControlOneFrame(true);
                     }
 
                 }
@@ -87,9 +158,14 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
     }
 
+    static boolean autoPilotWasOn = false;
+
     @Override
     public void advance(float amount, List<InputEventAPI> events) {
-
+        if (autoPilotWasOn && !Global.getCombatEngine().isUIAutopilotOn()) {
+            //((CombatState) Global.getCombatEngine()).setAutopilot(true);
+            autoPilotWasOn = false;
+        }
     }
 
     @Override
@@ -97,27 +173,45 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
     }
 
-    public boolean drawNightcrossTactical(boolean input, InputEventAPI e, List<InputEventAPI> events, int side) {
+    public ShipIcon getIconClassForMember(DeployedFleetMemberAPI member) {
+        float bestScore = 0;
+        GetShipIconListener bestListener = null;
+        for (GetShipIconListener listener : GetShipIconListeners) {
+            float score = listener.getScore(member);
+            if (score > bestScore) {
+                bestScore = score;
+                bestListener = listener;
+            }
+        }
+        if (bestListener != null) {
+            return bestListener.getShipIcon(member);
+        }
+        return new ShipIconImpl(member);
+    }
+
+    List<List<DeployedFleetMemberAPI>> getMemberDisplayList(int side) {
         CombatEngineAPI engine = Global.getCombatEngine();
-
-        if (!toggle) return false;
-        if (engine.isCombatOver() || !((engine.isMission() && engine.getMissionId() != null) || engine.isInCampaign() || engine.isSimulation())) return false;
-        if (e != null && e.isConsumed()) return false;
-
-        // get
         List<DeployedFleetMemberAPI> members = engine.getFleetManager(side).getDeployedCopyDFM();
         List<DeployedFleetMemberAPI> capitals = new ArrayList<DeployedFleetMemberAPI>();
         List<DeployedFleetMemberAPI> cruisers = new ArrayList<DeployedFleetMemberAPI>();
         List<DeployedFleetMemberAPI> destroyers = new ArrayList<DeployedFleetMemberAPI>();
         List<DeployedFleetMemberAPI> frigates = new ArrayList<DeployedFleetMemberAPI>();
 
+        HashMap<DeployedFleetMemberAPI, ShipIcon> newIconMap = new HashMap<DeployedFleetMemberAPI, ShipIcon>();
         // filter
         for (DeployedFleetMemberAPI member : members) {
+            if (member.getMember().isAlly()) continue; // allies manage themselves
             if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP) capitals.add(member);
             else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.CRUISER) cruisers.add(member);
             else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.DESTROYER) destroyers.add(member);
             else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.FRIGATE) frigates.add(member);
+            if (iconMap.get(member) != null) {
+                newIconMap.put(member, iconMap.get(member));
+            } else {
+                newIconMap.put(member, getIconClassForMember(member));
+            }
         }
+        iconMap = newIconMap;
 
         // build the render list
         List<List<DeployedFleetMemberAPI>> display = new ArrayList<List<DeployedFleetMemberAPI>>();
@@ -126,11 +220,32 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         display.add(destroyers);
         display.add(frigates);
 
+        return display;
+    }
+
+    public boolean drawYukiTacticalDisplay(NA_CombatPlugin.InputType input, InputEventAPI e, List<InputEventAPI> events, int side) {
+        CombatEngineAPI engine = Global.getCombatEngine();
+
+        if (!toggle) return false;
+        if (engine.isCombatOver() || !((engine.isMission() && engine.getMissionId() != null) || engine.isInCampaign() || engine.isSimulation())) return false;
+        if (e != null && e.isConsumed()) return false;
+
+        boolean flip = side == 1;
+        boolean flipv = NA_SettingsListener.na_combatui_flipv;
+        if (NA_SettingsListener.na_combatui_flip) flip = !flip;
+
+
+        // get
+        List<List<DeployedFleetMemberAPI>> display = getMemberDisplayList(side);
+
         // sort by DP
         for (List<DeployedFleetMemberAPI> list : display) {
             list.sort(new Comparator<DeployedFleetMemberAPI>() {
                 @Override
                 public int compare(DeployedFleetMemberAPI o1, DeployedFleetMemberAPI o2) {
+                    if (iconMap.containsKey(o1) && iconMap.containsKey(o2)) {
+                        return (int) (iconMap.get(o1).getSortValue() - iconMap.get(o2).getSortValue());
+                    }
                     boolean retreating1 = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(o1.getShip()) != null
                             && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(o1.getShip()).getType().equals(CombatAssignmentType.RETREAT);
                     boolean retreating2 = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(o2.getShip()) != null
@@ -142,355 +257,69 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             });
         }
 
-        HashMap<String, CombatFleetManagerAPI.AssignmentInfo> escortList = new HashMap<>();
-
-
-
-        /*for (List<DeployedFleetMemberAPI> list : display) {
-            for (DeployedFleetMemberAPI member : list) {
-
-                boolean retreating = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null
-                        && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.RETREAT);
-
-                boolean escort = !retreating && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null
-                        && (
-                        Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.LIGHT_ESCORT)
-                                || Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.MEDIUM_ESCORT)
-                                || Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.HEAVY_ESCORT)
-                );
-                if (escort) {
-                    if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.LIGHT_ESCORT)
-                            || Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.MEDIUM_ESCORT)
-                            || Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.HEAVY_ESCORT)) {
-                        AssignmentTargetAPI at = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentTargetFor(member.getShip());
-                        if (at != null)
-                            escortList.put(((DeployedFleetMemberAPI) at).getShip().getId(), Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()));
-                    }
-                }
-
-
-
-
-                XX += Xspacing;
-            }
-            XX = XXstart;
-            YY += Yspacing;
-        }*/
+        HashMap<String, CombatFleetManagerAPI.AssignmentInfo> assignmentList = new HashMap<>();
 
         List<CombatFleetManagerAPI.AssignmentInfo> assignments = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAllAssignments();
         for (CombatFleetManagerAPI.AssignmentInfo info : assignments) {
             if (info.getType().equals(CombatAssignmentType.LIGHT_ESCORT)
             || info.getType().equals(CombatAssignmentType.MEDIUM_ESCORT)
-            || info.getType().equals(CombatAssignmentType.HEAVY_ESCORT)) escortList.put(((DeployedFleetMemberAPI) info.getTarget()).getShip().getId(), info);
+            || info.getType().equals(CombatAssignmentType.HEAVY_ESCORT)) assignmentList.put(((DeployedFleetMemberAPI) info.getTarget()).getShip().getId(), info);
         }
 
-
-
-
         // render
-        float YY = Global.getSettings().getScreenHeightPixels() - NA_SettingsListener.tacticalRenderHeightOffset;
         float w = NA_SettingsListener.na_combatui_size;
         float h = NA_SettingsListener.na_combatui_size;
 
-        float Xspacing = side == 0 ? w + NA_SettingsListener.na_combatui_hspace : -w - NA_SettingsListener.na_combatui_hspace;
+        float Xspacing = !flip ? w + NA_SettingsListener.na_combatui_hspace : -w - NA_SettingsListener.na_combatui_hspace;
         float Yspacing = -h - NA_SettingsListener.na_combatui_vspace;
 
-        float XXstart = side == 0 ? NA_SettingsListener.tacticalRenderSideOffset :
-                Global.getSettings().getScreenWidthPixels() - NA_SettingsListener.tacticalRenderSideOffset - w;
-        float XX = XXstart;
-        float TEXTHEIGHT = 20;
-        float textSpacing = side == 0 ? 100 : -100;
-        float TEXTXOFF = side == 0 ? 0 : 1.5f*textSpacing;
-        float TITLEXOFF = side == 0 ? 12 : 12;
+        float XXstart = !flip ? NA_SettingsListener.tacticalRenderSideOffset + (side == 1 ? NA_SettingsListener.tacticalRenderSideOffsetEnemy : 0):
+                Global.getSettings().getScreenWidthPixels() - NA_SettingsListener.tacticalRenderSideOffset - w - (side == 1 ? NA_SettingsListener.tacticalRenderSideOffsetEnemy : 0);
+
+
         float TEXTOFF = 20 + h;
-        double sineAmt = Math.sin(9f * engine.getTotalElapsedTime(true) % (2*Math.PI));
 
-        if (!NA_SettingsListener.na_combatui_nocontrol) {
-            if (Global.getCombatEngine().getPlayerShip().getShipTarget() != null
-                    && Global.getCombatEngine().getPlayerShip().getShipTarget().getOwner() == side
-                    && Global.getCombatEngine().getPlayerShip().getShipTarget().getName() != null) {
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), Global.getCombatEngine().getPlayerShip().getShipTarget().getName(), TEXT_COLOR_HIGHLIGHT, new Vector2f(XX+TEXTXOFF+TITLEXOFF, YY + TEXTOFF + TEXTHEIGHT), false);
-            }
-            if (input && side == 0) {
-                if (e.getX() > XX+TEXTXOFF && e.getX() < XX+TEXTXOFF + textSpacing
-                        && e.getY() > YY + TEXTOFF - TEXTHEIGHT && e.getY() < YY + TEXTOFF) {
-                    commandMode = CommandMode.RETREAT_COMMAND;
-                    Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
-                    e.consume(); events.remove(e);
-                    return true;
-                } else if (e.getX() > XX+TEXTXOFF + textSpacing && e.getX() < XX+TEXTXOFF + 2 * textSpacing
-                        && e.getY() > YY + TEXTOFF - TEXTHEIGHT && e.getY() < YY + TEXTOFF) {
-                    commandMode = CommandMode.ESCORT_COMMAND;
-                    Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
-                    e.consume(); events.remove(e);
-                    return true;
-                } else if (e.getX() > XX+TEXTXOFF + 2*textSpacing && e.getX() < XX+TEXTXOFF + 3 * textSpacing
-                        && e.getY() > YY + TEXTOFF - TEXTHEIGHT && e.getY() < YY + TEXTOFF) {
-                    commandMode = CommandMode.SEARCHANDDESTROY_COMMAND;
-                    Global.getSoundPlayer().playUISound("ui_button_patrol", 1f, 1f);
-                    e.consume(); events.remove(e);
-                    return true;
-                }
-            } else if (side == 0) {
-                Color textColor_OFF = TEXT_COLOR_OFF;
-                Color textColor_ON = TEXT_COLOR_ON;
-                Color textColor_HL = TEXT_COLOR_HIGHLIGHT;
-                if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getCommandPointsLeft() == 0) textColor_ON = textColor_OFF;
-                boolean hl_ret = false;
-                boolean hl_esc = false;
-                boolean hl_snd = false;
+        float YY = Global.getSettings().getScreenHeightPixels() - NA_SettingsListener.tacticalRenderHeightOffset - (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0);
+        if (flipv) {
+            YY = NA_SettingsListener.tacticalRenderHeightOffset + (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0) - 20;
 
-                if (Global.getSettings().getMouseX() > XX+TEXTXOFF && Global.getSettings().getMouseX() < XX+TEXTXOFF + textSpacing
-                        && Global.getSettings().getMouseY() > YY + TEXTOFF - TEXTHEIGHT && Global.getSettings().getMouseY() < YY + TEXTOFF) {
-                    hl_ret = true;
-                } else if (Global.getSettings().getMouseX() > XX+TEXTXOFF + textSpacing && Global.getSettings().getMouseX() < XX+TEXTXOFF + 2 * textSpacing
-                        && Global.getSettings().getMouseY() > YY + TEXTOFF - TEXTHEIGHT && Global.getSettings().getMouseY() < YY + TEXTOFF) {
-                    hl_esc = true;
-                } else if (Global.getSettings().getMouseX() > XX+TEXTXOFF + 2*textSpacing && Global.getSettings().getMouseX() < XX+TEXTXOFF + 3 * textSpacing
-                        && Global.getSettings().getMouseY() > YY + TEXTOFF - TEXTHEIGHT && Global.getSettings().getMouseY() < YY + TEXTOFF) {
-                    hl_snd = true;
-                }
-
-                if (NA_SettingsListener.na_combatui_copyright && Global.getCombatEngine().getPlayerShip().getShipTarget() == null
-                    || NA_SettingsListener.na_combatui_copyright && Global.getCombatEngine().getPlayerShip().getShipTarget().getOwner() != 0)
-                    MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Nightcross Tactical Display", textColor_OFF, new Vector2f(XX+TEXTXOFF+TITLEXOFF, YY + TEXTOFF + TEXTHEIGHT), false);
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Retreat", commandMode == CommandMode.RETREAT_COMMAND ? textColor_ON : hl_ret ? textColor_HL : textColor_OFF, new Vector2f(XX+TEXTXOFF, YY + TEXTOFF), false);
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Escort", commandMode == CommandMode.ESCORT_COMMAND ? textColor_ON : hl_esc ? textColor_HL : textColor_OFF, new Vector2f(XX+TEXTXOFF + textSpacing, YY + TEXTOFF), false);
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "S&D", commandMode == CommandMode.SEARCHANDDESTROY_COMMAND ? textColor_ON : hl_snd ? textColor_HL : textColor_OFF, new Vector2f(XX+TEXTXOFF + 2 * textSpacing, YY + TEXTOFF), false);
-
+            for (List<DeployedFleetMemberAPI> list : display) {
+                if (list.isEmpty()) continue;
+                YY -= Yspacing;
             }
         }
 
+        float XX = XXstart;
+        float TEXTHEIGHT = 20;
+        float textSpacing = 100;
+        float TEXTXOFF = !flip ? 0 : -2*textSpacing;
+        float TITLEXOFF = !flip ? 12 : 12;
+        float sineAmt = (float) Math.sin(9f * engine.getTotalElapsedTime(true) % (2*Math.PI));
 
+        for (DisplayDrawListener listener : DisplayDrawListeners) {
+            if (listener.draw(input, side, flip, flipv, XX, YY, TEXTXOFF, TEXTOFF, TEXTHEIGHT, TITLEXOFF, textSpacing, e)) {
+
+                return true;
+            }
+        }
 
         for (List<DeployedFleetMemberAPI> list : display) {
             if (list.isEmpty()) continue;
             for (DeployedFleetMemberAPI member : list) {
-                if (input) {
-                    if (e.getX() > XX && e.getX() < XX + w
-                            && e.getY() > YY && e.getY() < YY + h) {
-
-                        if (side == 0 && member.getShip() != engine.getPlayerShip() || commandMode == CommandMode.ESCORT_COMMAND) {
-                            if (commandMode == CommandMode.ESCORT_COMMAND) {
-                                CombatAssignmentType escortType = CombatAssignmentType.LIGHT_ESCORT;
-                                if (member.getShip().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP) escortType = CombatAssignmentType.HEAVY_ESCORT;
-                                else if (member.getShip().getHullSize() == ShipAPI.HullSize.CRUISER) escortType = CombatAssignmentType.MEDIUM_ESCORT;
-
-                                if (!escortList.containsKey(member.getShip().getId())) {
-
-                                    if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null) {
-                                        Global.getCombatEngine().getFleetManager(side).getTaskManager(false).removeAssignment(
-                                                Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()));
-                                    }
-
-
-                                    Global.getCombatEngine().getFleetManager(side).getTaskManager(false).createAssignment(escortType, member, true);
-                                    Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
-                                } else if (escortList.containsKey(member.getShip().getId())) {
-
-                                    Global.getCombatEngine().getFleetManager(side).getTaskManager(false).removeAssignment(
-                                            escortList.get(member.getShip().getId()));
-                                    Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
-                                }
-                            } else if (commandMode == CommandMode.SEARCHANDDESTROY_COMMAND) {
-                                //List<CombatFleetManagerAPI.AssignmentInfo> assignments = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAllAssignments();
-                                if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) == null
-                                        || !Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.SEARCH_AND_DESTROY)) {
-
-                                    Global.getCombatEngine().getFleetManager(side).getTaskManager(false).orderSearchAndDestroy(member, true);
-                                    Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
-                                }
-                            } else if (commandMode == CommandMode.RETREAT_COMMAND) {
-                                if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) == null
-                                        || !Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.RETREAT)) {
-
-                                    if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null) {
-                                        Global.getCombatEngine().getFleetManager(side).getTaskManager(false).removeAssignment(
-                                                Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()));
-                                    }
-
-
-                                    Global.getCombatEngine().getFleetManager(side).getTaskManager(false).orderRetreat(member, true, true);
-                                    Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
-                                }
-                            } else if (Global.getCombatEngine().getPlayerShip() != null && member.getShip() != Global.getCombatEngine().getPlayerShip()) {
-                                if (member.getShip() != Global.getCombatEngine().getPlayerShip().getShipTarget()) {
-                                    Global.getCombatEngine().getPlayerShip().setShipTarget(member.getShip());
-                                    Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
-                                } else {
-                                    Global.getCombatEngine().getPlayerShip().setShipTarget(null);
-                                    Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
-                                }
-
+                if (input != InputType.NO_INPUT) {
+                    if (iconMap.containsKey(member)) {
+                        if (input == InputType.HOLD) {
+                            if (iconMap.get(member).handleHold(flip, flipv, XX, YY, w, h, assignmentList, e)) {
+                                return true;
                             }
+                        } else if (iconMap.get(member).handleInput(flip, flipv, XX, YY, w, h, assignmentList, e)) {
 
-                        } else if (side == 1 && Global.getCombatEngine().getPlayerShip() != null && member.getShip() != Global.getCombatEngine().getPlayerShip()) {
-                            if (member.getShip() != Global.getCombatEngine().getPlayerShip().getShipTarget()) {
-                                Global.getCombatEngine().getPlayerShip().setShipTarget(member.getShip());
-                                Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
-                            } else {
-                                Global.getCombatEngine().getPlayerShip().setShipTarget(null);
-                                Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
-                            }
-
+                            return true;
                         }
-
-
-
-                        e.consume(); events.remove(e);
-                        return true;
                     }
                 } else {
-                    // icon
-                    SpriteAPI sprite = Global.getSettings().getSprite(member.getMember().getHullSpec().getSpriteName());
-                    float hp = member.getShip().getHullLevel();
-                    float colorScale = 200;
-
-                    Color color = NA_SettingsListener.na_combatui_colorblind ?
-                            new Color(250 - (int)(colorScale * 0.8 * hp), 50 + (int)(0.7f * colorScale * hp), 50 + (int)(colorScale * hp), 220)
-                            : new Color(250 - (int)(colorScale * 0.9 * hp), 50 + (int)(colorScale * hp), 50, 220);
-                    float scalex = (sprite.getWidth() > 0) ? w / sprite.getWidth() : 1f;
-                    float scaley = (sprite.getHeight() > 0) ? h/ sprite.getHeight() : 1f;
-                    float scale = Math.min(scalex, scaley);
-
-                    sprite.setSize(scale * sprite.getWidth(), scale * sprite.getHeight());
-                    sprite.setColor(color);
-                    //sprite.setCenter(sprite.getWidth(), sprite.getHeight());
-
-
-                    boolean retreating = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null
-                            && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.RETREAT);
-
-                    boolean escort = !NA_SettingsListener.na_combatui_info && !retreating && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null
-                            && (
-                            Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.LIGHT_ESCORT)
-                                    || Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.MEDIUM_ESCORT)
-                                    || Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.HEAVY_ESCORT)
-                    );
-                    boolean snd = !NA_SettingsListener.na_combatui_info && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null
-                            && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.SEARCH_AND_DESTROY);
-
-                    if (retreating) {
-                        sprite.setAlphaMult(0.6f + 0.39f * (float)sineAmt);
-                    }
-
-                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                    sprite.setAdditiveBlend();
-                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                    sprite.setNormalBlend();
-
-
-                    float yyy = 0;
-                    if (member.getShip() == Global.getCombatEngine().getPlayerShip()) {
-                        MagicUI.addText(member.getShip(), "you", YOU_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                        yyy -= 9;
-                    } else if (Global.getCombatEngine().getPlayerShip() != null && Global.getCombatEngine().getPlayerShip().getShipTarget() != null
-                        && Global.getCombatEngine().getPlayerShip().getShipTarget().getId().equals(member.getShip().getId())) {
-
-                        SpriteAPI select = Global.getSettings().getSprite("icons","na_icon_select");
-                        select.setSize(w, w);
-                        if (side == 1) select.setColor(new Color(145, 2, 2, 255));
-                        else select.setColor(new Color(50, NA_SettingsListener.na_combatui_colorblind ? 175 : 255, NA_SettingsListener.na_combatui_colorblind ? 255 : 50, 255));
-                        select.setAdditiveBlend();
-                        select.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                        select.setNormalBlend();
-                    }
-                    if (side == 0 || !NA_SettingsListener.na_combatui_noenemyinfo) {
-                        if (snd) {
-                            MagicUI.addText(member.getShip(), "S&D", SND_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                            yyy -= 9;
-                        }
-                        if (!NA_SettingsListener.na_combatui_info && escortList.containsKey(member.getShip().getId())) {
-                            if (escortList.get(member.getShip().getId()).getAssignedMembers().isEmpty()) {
-                                MagicUI.addText(member.getShip(), "-", ESCORT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                            } else
-                            if (escortList.get(member.getShip().getId()).getType().equals(CombatAssignmentType.MEDIUM_ESCORT))
-                                MagicUI.addText(member.getShip(), "M", ESCORT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                            else if (escortList.get(member.getShip().getId()).getType().equals(CombatAssignmentType.HEAVY_ESCORT))
-                                MagicUI.addText(member.getShip(), "H", ESCORT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                            else if (escortList.get(member.getShip().getId()).getType().equals(CombatAssignmentType.LIGHT_ESCORT))
-                                MagicUI.addText(member.getShip(), "L", ESCORT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                            yyy -= 9;
-                        } else if (!NA_SettingsListener.na_combatui_info) {
-                            if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null
-                                    && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType() == CombatAssignmentType.DEFEND) {
-                                MagicUI.addText(member.getShip(), "DEF", D_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                                yyy -= 9;
-                            } else if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null
-                                    && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType() == CombatAssignmentType.CAPTURE) {
-                                MagicUI.addText(member.getShip(), "CAP", CAP_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                                yyy -= 9;
-                            } else if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null
-                                    && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType() == CombatAssignmentType.CONTROL) {
-                                MagicUI.addText(member.getShip(), "CON", D_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                                yyy -= 9;
-                            } else if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()) != null
-                                    && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType() == CombatAssignmentType.ENGAGE) {
-                                MagicUI.addText(member.getShip(), "eng", ENGAGE_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                                yyy -= 9;
-                            }
-
-
-
-                        }
-                    }
-
-                    if ((side == 0 || !NA_SettingsListener.na_combatui_noenemyinfo) && !snd && escort) {
-
-
-                        if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.LIGHT_ESCORT)
-                                || Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.MEDIUM_ESCORT)
-                                || Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip()).getType().equals(CombatAssignmentType.HEAVY_ESCORT)) {
-                            MagicUI.addText(member.getShip(), "esc", ESCORT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                            yyy -= 9;
-                        }
-                    }
-
-                    if (side == 0 || !NA_SettingsListener.na_combatui_noenemyinfo) {
-                        if (!NA_SettingsListener.na_combatui_info && retreating) {
-                            MagicUI.addText(member.getShip(), (NA_SettingsListener.na_combatui_hspace + NA_SettingsListener.na_combatui_size < 55) ? ((NA_SettingsListener.na_combatui_hspace + NA_SettingsListener.na_combatui_size <= 46) ? "ret." : "retr.") : "retreat", RETREAT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                            yyy -= 9;
-                        } else {
-                            if (sineAmt > 0 && member.getShip() != Global.getCombatEngine().getPlayerShip()
-                                    && ((member.getShip().getShipAI() != null && member.getShip().getShipAI().getAIFlags() != null && (
-                                    member.getShip().getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.IN_CRITICAL_DPS_DANGER)
-                                            || member.getShip().getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.HAS_INCOMING_DAMAGE)
-                                            || member.getShip().getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.RUN_QUICKLY)
-                                            || member.getShip().getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.TURN_QUICKLY)
-                                            || member.getShip().getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.BACKING_OFF)
-                            )))) {
-                                if (member.getShip().getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.IN_CRITICAL_DPS_DANGER)
-                                        || member.getShip().getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.HAS_INCOMING_DAMAGE)
-                                        || member.getShip().getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.RUN_QUICKLY)
-                                        || member.getShip().getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.TURN_QUICKLY))
-                                    MagicUI.addText(member.getShip(), "!!!", ALERT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                                else MagicUI.addText(member.getShip(), "!", ENGAGE_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                                yyy -= 9;
-                            }
-                        }
-                    }
-
-                    // bars
-                    float off = 0;
-
-                    if (((side == 0 && !NA_SettingsListener.na_combatui_ppt) || (side == 1 && !NA_SettingsListener.na_combatui_noenemyppt)) && !retreating) {
-                        Color fill2 = new Color(202, 197, 197, member.getShip().getPeakTimeRemaining() < 1f ? (int) (200 + 50 * sineAmt) : 255);
-                        Color border2 = new Color(169, 232, 8, 180);
-                        float crTimeFrac = member.getShip().getPeakTimeRemaining()/
-                                (1f + member.getMember().getStats().getPeakCRDuration().computeEffective(member.getShip().getHullSpec().getNoCRLossTime()));
-
-                        MagicUI.addBar(member.getShip(), member.getShip().getCurrentCR(), fill2, border2, crTimeFrac * member.getShip().getCurrentCR(), new Vector2f(XX + w * 0.125f, YY - 12), 6, w*0.75f, true);
-                    } else off = -8;
-
-                    if ((side == 0 && !NA_SettingsListener.na_combatui_flux) || (side == 1 && !NA_SettingsListener.na_combatui_noenemyflux)) {
-                        Color fill = new Color(210, member.getShip().getFluxTracker().isOverloaded() ? 150 : 82, 237, member.getShip().getFluxTracker().isOverloadedOrVenting() ? (int) (200 + 50 * sineAmt) : 255);
-                        Color border = new Color(175, 134, 227, 180);
-
-                        MagicUI.addBar(member.getShip(), member.getShip().getFluxLevel(), fill, border, member.getShip().getHardFluxLevel(), new Vector2f(XX + w * 0.125f, YY - 4 + off), 6, w * 0.75f, true);
-
-                    }
+                    if (iconMap.containsKey(member)) iconMap.get(member).render(flip, flipv, XX, YY, w, h, assignmentList, true, sineAmt);
                 }
-
 
                 XX += Xspacing;
             }
@@ -507,9 +336,9 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             if ((engine.isUIShowingHUD() || NA_SettingsListener.na_combatui_force) && engine.getCombatUI() != null && !engine.getCombatUI().isShowingCommandUI() && (!NA_SettingsListener.na_combatui_pause
                     || engine.isPaused()
             )) {
-                drawNightcrossTactical(false, null, null, 0);
+                drawYukiTacticalDisplay(InputType.NO_INPUT, null, null, 0);
                 if (NA_SettingsListener.na_combatui_enemy)
-                    drawNightcrossTactical(false, null, null, 1);
+                    drawYukiTacticalDisplay(InputType.NO_INPUT, null, null, 1);
 
             }
         }
