@@ -7,7 +7,6 @@ public class NA_SettingsListener implements LunaSettingsListener {
 
     public static boolean na_combatui_enable = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_enable");
     public static boolean na_combatui_pause = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_pause");
-    public static boolean na_combatui_compact = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_compact");
     public static boolean na_combatui_colorblind = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_colorblind");
     public static boolean na_combatui_nocontrol = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_nocontrol");
     public static boolean na_combatui_copyright = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_copyright");
@@ -42,7 +41,6 @@ public class NA_SettingsListener implements LunaSettingsListener {
     public void settingsChanged(String modID) {
         na_combatui_enable = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_enable");
         na_combatui_pause = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_pause");
-        na_combatui_compact = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_compact");
         na_combatui_colorblind = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_colorblind");
         na_combatui_nocontrol = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_nocontrol");
         na_combatui_copyright = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_copyright");

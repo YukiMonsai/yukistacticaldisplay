@@ -1,3 +1,6 @@
+1.0.3
+- Fixed another CTD caused by the last update
+
 1.0.2
 - Added sliders for size of the display, rather than regular and compact mode
 - 'retreat' text on ships is shortened if icon size is small
