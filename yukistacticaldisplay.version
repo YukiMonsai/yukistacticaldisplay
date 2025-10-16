@@ -32,7 +32,7 @@
     {
       "major": 1,
       "minor": 0,
-      "patch": 0 # Can be a number, character or string (1, 2, a, b, "-RC2", etc)
+      "patch": 2 # Can be a number, character or string (1, 2, a, b, "-RC2", etc)
     },
 
   # OPTIONAL
@@ -40,7 +40,7 @@
   # This is used to launch directly to the forum thread from in the game.
   # The ID is the set of digits at the end of the forum thread URL before the dot.
   # For example: fractalsoftworks.com/forum/index.php?topic=8181.0 has an ID of 8181
-  #"modThreadId": 8181, # eg 8181
+  "modThreadId": 34271., # eg 8181
 
   # OPTIONAL
   # A download link directly to the latest version of your mod.
@@ -51,5 +51,5 @@
   # A link to your changelog.
   # This is used by mod managers/version checkers (eg SMOL, MOSS, LunaLib) to display changelogs without visiting your mod page.
   # May be plain text or markdown, though plain text is more likely to be rendered correctly in all viewers.
-  #"changelogURL": "https://raw.githubusercontent.com/YukiMonsai/yukistacticaldisplay/releases/latest/changelog.md",
+  "changelogURL": "https://raw.githubusercontent.com/YukiMonsai/yukistacticaldisplay/releases/latest/changelog.md",
 }

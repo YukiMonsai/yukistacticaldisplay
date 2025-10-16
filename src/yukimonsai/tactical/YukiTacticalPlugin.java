@@ -3,6 +3,7 @@ package yukimonsai.tactical;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 
+import com.fs.starfarer.api.combat.CombatAssignmentType;
 import lunalib.lunaSettings.LunaSettings;
 
 public class YukiTacticalPlugin extends BaseModPlugin {

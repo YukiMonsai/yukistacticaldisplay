@@ -26,6 +26,9 @@ public class NA_SettingsListener implements LunaSettingsListener {
 
     public static float tacticalRenderHeightOffset = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_height");
     public static float tacticalRenderSideOffset = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_side");
+    public static float na_combatui_size = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_size");
+    public static float na_combatui_vspace = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_vspace");
+    public static float na_combatui_hspace = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_hspace");
 
 
 
@@ -53,6 +56,9 @@ public class NA_SettingsListener implements LunaSettingsListener {
         na_combatui_noenemyinfo = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_noenemyinfo");
         tacticalRenderHeightOffset = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_height");
         tacticalRenderSideOffset = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_side");
+        na_combatui_size = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_size");
+        na_combatui_vspace = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_vspace");
+        na_combatui_hspace = LunaSettings.getFloat("yukistacticaldisplay", "na_combatui_hspace");
         na_combatui_hotkey = LunaSettings.getInt("yukistacticaldisplay", "na_combatui_hotkey");
     }
 }

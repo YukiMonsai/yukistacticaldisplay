@@ -15,8 +15,6 @@ import java.util.List;
 
 public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
-    // TODO add optional display for other side (for tournaments maybe?)
-
     public static boolean toggle = true;
 
     public static Color TEXT_COLOR_OFF = new Color(255, 255, 255, 115);
@@ -51,7 +49,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                         || engine.isPaused()
                 )) {
                     for (InputEventAPI e: events) {
-                        if (e.isKeyDownEvent()) {
+                        if (!e.isConsumed() && e.isKeyDownEvent()) {
                             if (e.getEventValue() == NA_SettingsListener.na_combatui_hotkey) {
                                 toggle = !toggle;
                                 e.consume();
@@ -71,7 +69,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                         || engine.isPaused()
                 )) {
                     for (InputEventAPI e: events) {
-                        if (e.isMouseDownEvent()) {
+                        if (!e.isConsumed() && e.isMouseDownEvent()) {
                             if (drawNightcrossTactical(true, e, events, 0)) return;
                             if (drawNightcrossTactical(true, e, events, 1)) return;
 
@@ -191,16 +189,12 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
         // render
         float YY = Global.getSettings().getScreenHeightPixels() - NA_SettingsListener.tacticalRenderHeightOffset;
-        float Xspacing = side == 0 ? 85 : -85;
-        float Yspacing = -90;
-        float w = 80;
-        float h = 60;
-        if (NA_SettingsListener.na_combatui_compact) {
-            w = 60f;
-            h = 40f;
-            Xspacing = side == 0 ? 65 : -65;
-            Yspacing = -60f;
-        }
+        float w = NA_SettingsListener.na_combatui_size;
+        float h = NA_SettingsListener.na_combatui_size;
+
+        float Xspacing = side == 0 ? w + NA_SettingsListener.na_combatui_hspace : -w - NA_SettingsListener.na_combatui_hspace;
+        float Yspacing = -h - NA_SettingsListener.na_combatui_vspace;
+
         float XXstart = side == 0 ? NA_SettingsListener.tacticalRenderSideOffset :
                 Global.getSettings().getScreenWidthPixels() - NA_SettingsListener.tacticalRenderSideOffset - w;
         float XX = XXstart;
@@ -454,7 +448,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
                     if (side == 0 || !NA_SettingsListener.na_combatui_noenemyinfo) {
                         if (!NA_SettingsListener.na_combatui_info && retreating) {
-                            MagicUI.addText(member.getShip(), "retreat", RETREAT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                            MagicUI.addText(member.getShip(), (NA_SettingsListener.na_combatui_hspace + NA_SettingsListener.na_combatui_size < 55) ? ((NA_SettingsListener.na_combatui_hspace + NA_SettingsListener.na_combatui_size <= 46) ? "ret." : "retr.") : "retreat", RETREAT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
                             yyy -= 9;
                         } else {
                             if (sineAmt > 0 && member.getShip() != Global.getCombatEngine().getPlayerShip()
@@ -477,28 +471,24 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                     }
 
                     // bars
-                    if ((side == 0 && !NA_SettingsListener.na_combatui_flux) || (side == 1 && !NA_SettingsListener.na_combatui_noenemyflux)) {
-                        Color fill = new Color(210, member.getShip().getFluxTracker().isOverloaded() ? 150 : 82, 237, member.getShip().getFluxTracker().isOverloadedOrVenting() ? (int) (200 + 50 * sineAmt) : 255);
-                        Color border = new Color(175, 134, 227, 180);
-                        //if (NA_SettingsListener.na_combatui_compact)
-                        MagicUI.addBar(member.getShip(), member.getShip().getFluxLevel(), fill, border, member.getShip().getHardFluxLevel(), new Vector2f(XX + w * 0.125f, YY - 4), 6, w * 0.75f, true);
-                        //else MagicUI.addInterfaceStatusBar(member.getShip(), new Vector2f(XX, YY - 4), member.getShip().getFluxLevel(), fill, border, member.getShip().getHardFluxLevel());
-
-                    }
+                    float off = 0;
 
                     if (((side == 0 && !NA_SettingsListener.na_combatui_ppt) || (side == 1 && !NA_SettingsListener.na_combatui_noenemyppt)) && !retreating) {
                         Color fill2 = new Color(202, 197, 197, member.getShip().getPeakTimeRemaining() < 1f ? (int) (200 + 50 * sineAmt) : 255);
                         Color border2 = new Color(169, 232, 8, 180);
                         float crTimeFrac = member.getShip().getPeakTimeRemaining()/
                                 (1f + member.getMember().getStats().getPeakCRDuration().computeEffective(member.getShip().getHullSpec().getNoCRLossTime()));
-                        //if (NA_SettingsListener.na_combatui_compact) {
+
                         MagicUI.addBar(member.getShip(), member.getShip().getCurrentCR(), fill2, border2, crTimeFrac * member.getShip().getCurrentCR(), new Vector2f(XX + w * 0.125f, YY - 12), 6, w*0.75f, true);
+                    } else off = -8;
+
+                    if ((side == 0 && !NA_SettingsListener.na_combatui_flux) || (side == 1 && !NA_SettingsListener.na_combatui_noenemyflux)) {
+                        Color fill = new Color(210, member.getShip().getFluxTracker().isOverloaded() ? 150 : 82, 237, member.getShip().getFluxTracker().isOverloadedOrVenting() ? (int) (200 + 50 * sineAmt) : 255);
+                        Color border = new Color(175, 134, 227, 180);
+
+                        MagicUI.addBar(member.getShip(), member.getShip().getFluxLevel(), fill, border, member.getShip().getHardFluxLevel(), new Vector2f(XX + w * 0.125f, YY - 4 + off), 6, w * 0.75f, true);
+
                     }
-
-
-                    //MagicUI.drawSystemBar(member.getShip(), new Vector2f(XX + w/2, YY - 4), crTimeFrac <= 0.1f ? border2 : fill2, crTimeFrac <= 0.1f ? crTimeFrac : member.getShip().getCurrentCR(), 0);
-                    //}
-                    //else MagicUI.addInterfaceStatusBar(member.getShip(), new Vector2f(XX, YY - 15), member.getShip().getCurrentCR(), fill2, border2, crTimeFrac);
                 }
 
 
