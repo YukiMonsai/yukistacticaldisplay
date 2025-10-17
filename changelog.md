@@ -1,3 +1,7 @@
+1.0.5
+- Added dynamic size
+- Fixed some bugs with KoL modules showing up
+
 1.0.4
 - Added interface for ship icons for potential crossmod development
 - Added ability to flip sides and adjust difference in offset between enemy and player displays

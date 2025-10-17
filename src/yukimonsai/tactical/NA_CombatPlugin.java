@@ -4,9 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.combat.*;
 import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.input.InputEventType;
-import com.fs.starfarer.api.mission.FleetSide;
 import com.fs.starfarer.api.util.IntervalUtil;
-import com.fs.starfarer.combat.CombatState;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,6 +20,10 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
     public static HashMap<DeployedFleetMemberAPI, ShipIcon> iconMap = new HashMap<DeployedFleetMemberAPI, ShipIcon>();
 
     public static List<GetShipIconListener> GetShipIconListeners = new ArrayList<GetShipIconListener>();
+    static {
+        GetShipIconListeners.add(new GetShipIconModuleExcluder());
+        GetShipIconListeners.add(new GetShipIconDeadExcluder());
+}
     public static List<DisplayDrawListener> DisplayDrawListeners = new ArrayList<DisplayDrawListener>();
     static {
         DisplayDrawListeners.add(new BaseDisplayDrawListenerImpl());
@@ -35,6 +37,9 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
     public static float dataRefreshTime = 0.1f;
     public static boolean refreshData = true;
     public static IntervalUtil dataRefreshTimer = new IntervalUtil(dataRefreshTime, dataRefreshTime);
+
+    public static float max_size = 100;
+    public static float min_size = 30;
 
     public enum InputType {
         NO_INPUT,
@@ -214,15 +219,21 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         // filter
         for (DeployedFleetMemberAPI member : members) {
             if (member.getMember().isAlly()) continue; // allies manage themselves
-            if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP) capitals.add(member);
-            else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.CRUISER) cruisers.add(member);
-            else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.DESTROYER) destroyers.add(member);
-            else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.FRIGATE) frigates.add(member);
             if (iconMap.get(member) != null) {
                 newIconMap.put(member, iconMap.get(member));
             } else {
-                newIconMap.put(member, getIconClassForMember(member));
+                ShipIcon icon = getIconClassForMember(member);
+                if (icon != null)
+                    newIconMap.put(member, icon);
             }
+            if (iconMap.containsKey(member)) {
+                if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP) capitals.add(member);
+                else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.CRUISER) cruisers.add(member);
+                else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.DESTROYER) destroyers.add(member);
+                else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.FRIGATE) frigates.add(member);
+            }
+
+
         }
         iconMap = newIconMap;
 
@@ -284,32 +295,111 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         // render
         float w = NA_SettingsListener.na_combatui_size;
         float h = NA_SettingsListener.na_combatui_size;
+        if (side == 1 && NA_SettingsListener.na_combatui_enemysize != 0) {
+            w += NA_SettingsListener.na_combatui_enemysize;
+            h += NA_SettingsListener.na_combatui_enemysize;
+            w = Math.max(min_size, Math.min(max_size, w));
+            h = Math.max(min_size, Math.min(max_size, h));
+        }
 
         float Xspacing = !flip ? w + NA_SettingsListener.na_combatui_hspace : -w - NA_SettingsListener.na_combatui_hspace;
         float Yspacing = -h - NA_SettingsListener.na_combatui_vspace;
 
+
+        float shipSizeScale = NA_SettingsListener.na_combatui_sizematters;
+
+
+        if (NA_SettingsListener.na_combatui_sizedynamic != 0 || NA_SettingsListener.na_combatui_sizedynamicy != 0) {
+            float x_spacing = Math.abs(Xspacing);
+            float y_spacing = Math.abs(Yspacing);
+            float maxSizex = 0;
+            float maxSizey = 0;
+            float rows = 0;
+            float cols = 0;
+            for (List<DeployedFleetMemberAPI> list : display) {
+                if (list.isEmpty()) continue;
+                rows += 1;
+                for (DeployedFleetMemberAPI member : list) {
+                    cols += 1;
+                }
+                maxSizex = Math.max(maxSizex, cols*x_spacing);
+            }
+            if (rows > 0 && cols > 0) {
+                maxSizey = rows*Math.abs(y_spacing);
+            }
+            float dynamicMin = Math.min(min_size, NA_SettingsListener.na_combatui_sizedynamicmin);
+            if (NA_SettingsListener.na_combatui_sizedynamic > 0 && maxSizex > NA_SettingsListener.na_combatui_sizedynamic) {
+                float factor = NA_SettingsListener.na_combatui_sizedynamic/maxSizex;
+
+                float diff = w;
+                h *= factor;
+                w *= factor;
+                w = (int) Math.max(dynamicMin, Math.min(max_size, w));
+                h = (int) Math.max(dynamicMin, Math.min(max_size, h));
+                diff = w / diff;
+                Xspacing *= diff;
+                Yspacing *= diff;
+                shipSizeScale *= diff;
+                Xspacing = (int)Xspacing;
+                Yspacing = (int)Yspacing;
+                shipSizeScale = (int)shipSizeScale;
+
+            }
+            if (NA_SettingsListener.na_combatui_sizedynamicy > 0 && maxSizey > NA_SettingsListener.na_combatui_sizedynamicy) {
+                float factor = NA_SettingsListener.na_combatui_sizedynamicy/maxSizey;
+
+                float diff = h;
+                h *= factor;
+                w *= factor;
+                w = (int) Math.max(dynamicMin, Math.min(max_size, w));
+                h = (int) Math.max(dynamicMin, Math.min(max_size, h));
+                diff = w / diff;
+                Xspacing *= diff;
+                Yspacing *= diff;
+                shipSizeScale *= diff;
+                Xspacing = (int)Xspacing;
+                Yspacing = (int)Yspacing;
+                shipSizeScale = (int)shipSizeScale;
+            }
+        }
+
+
+        float YY = Global.getSettings().getScreenHeightPixels() - NA_SettingsListener.tacticalRenderHeightOffset - (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0);
         float XXstart = !flip ? NA_SettingsListener.tacticalRenderSideOffset + (side == 1 ? NA_SettingsListener.tacticalRenderSideOffsetEnemy : 0):
                 Global.getSettings().getScreenWidthPixels() - NA_SettingsListener.tacticalRenderSideOffset - w - (side == 1 ? NA_SettingsListener.tacticalRenderSideOffsetEnemy : 0);
 
 
-        float TEXTOFF = 20 + h;
-
-        float YY = Global.getSettings().getScreenHeightPixels() - NA_SettingsListener.tacticalRenderHeightOffset - (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0);
-        if (flipv) {
-            YY = NA_SettingsListener.tacticalRenderHeightOffset + (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0) - 20;
-
-            for (List<DeployedFleetMemberAPI> list : display) {
-                if (list.isEmpty()) continue;
-                YY -= Yspacing;
-            }
-        }
-
-        float XX = XXstart;
+        float TEXTOFF = 30 + h;
         float TEXTHEIGHT = 20;
         float textSpacing = 100;
         float TEXTXOFF = !flip ? 0 : -2*textSpacing;
         float TITLEXOFF = !flip ? 12 : 12;
         float sineAmt = (float) Math.sin(9f * engine.getTotalElapsedTime(true) % (2*Math.PI));
+
+
+        float movedUpExtra = 0;
+        float sizedUpTicks = 3;
+        boolean setTextOff = false;
+        float XX = XXstart;
+        if (flipv) {
+            YY = NA_SettingsListener.tacticalRenderHeightOffset + (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0) - 20;
+
+            for (List<DeployedFleetMemberAPI> list : display) {
+                sizedUpTicks--;
+                if (list.isEmpty()) continue;
+                if (!setTextOff && sizedUpTicks > -1) {
+                    TEXTOFF += shipSizeScale * (sizedUpTicks + 1);
+                    setTextOff = true;
+                    XX += (flip ? -1 : 1)*shipSizeScale;
+                }
+                if (!list.isEmpty()) {
+                    if (shipSizeScale > 0 && sizedUpTicks > 0) {
+                        YY += shipSizeScale * sizedUpTicks;
+                    }
+                    YY -= Yspacing;
+                }
+            }
+        }
 
         for (DisplayDrawListener listener : DisplayDrawListeners) {
             if (listener.draw(input, side, flip, flipv, XX, YY, TEXTXOFF, TEXTOFF, TEXTHEIGHT, TITLEXOFF, textSpacing, e)) {
@@ -318,8 +408,27 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             }
         }
 
+        float w_orig = w;
+        float h_orig = h;
+        float xSpacing_orig = Xspacing;
+        float ySpacing_orig = Yspacing;
 
+        sizedUpTicks = 3;
         for (List<DeployedFleetMemberAPI> list : display) {
+
+            XX = XXstart + (flip ? -1 : 1) * sizedUpTicks * (shipSizeScale);
+
+            w = w_orig;
+            h = h_orig;
+            Xspacing = xSpacing_orig;
+            Yspacing = ySpacing_orig;
+
+            w += sizedUpTicks*shipSizeScale;
+            h += sizedUpTicks*shipSizeScale;
+            Xspacing += sizedUpTicks*(flip ? -1 : 1) * shipSizeScale;
+            Yspacing -= Math.max(0, sizedUpTicks-1)*shipSizeScale;
+
+            sizedUpTicks--;
             if (list.isEmpty()) continue;
             for (DeployedFleetMemberAPI member : list) {
                 if (input != InputType.NO_INPUT) {
@@ -339,7 +448,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
                 XX += Xspacing;
             }
-            XX = XXstart;
+            //XX = XXstart;
             YY += Yspacing;
         }
         return false;
