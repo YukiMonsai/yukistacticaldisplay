@@ -20,7 +20,7 @@ public class BaseDisplayDrawListenerImpl implements DisplayDrawListener {
             if (Global.getCombatEngine().getPlayerShip().getShipTarget() != null
                     && Global.getCombatEngine().getPlayerShip().getShipTarget().getOwner() == side
                     && Global.getCombatEngine().getPlayerShip().getShipTarget().getName() != null) {
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), Global.getCombatEngine().getPlayerShip().getShipTarget().getName(), TEXT_COLOR_HIGHLIGHT, new Vector2f(XX+ textxoff + titlexoff, YY + textoff + textheight), false);
+                MagicUI.addText(null, Global.getCombatEngine().getPlayerShip().getShipTarget().getName(), TEXT_COLOR_HIGHLIGHT, new Vector2f(XX+ textxoff + titlexoff, YY + textoff + textheight), false);
             }
             if (input != NA_CombatPlugin.InputType.NO_INPUT && side == 0) {
                 if (e.getX() > XX+ textxoff && e.getX() < XX+ textxoff + textSpacing
@@ -81,12 +81,12 @@ public class BaseDisplayDrawListenerImpl implements DisplayDrawListener {
 
                 if (NA_SettingsListener.na_combatui_copyright && Global.getCombatEngine().getPlayerShip().getShipTarget() == null
                         || NA_SettingsListener.na_combatui_copyright && Global.getCombatEngine().getPlayerShip().getShipTarget().getOwner() != 0)
-                    MagicUI.addText(Global.getCombatEngine().getPlayerShip(), NA_CombatPlugin.title, textColor_OFF, new Vector2f(XX+ textxoff + titlexoff, YY + textoff + textheight), false);
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Retreat", NA_CombatPlugin.commandMode == NA_CombatPlugin.CommandMode.RETREAT_COMMAND ? textColor_ON : hl_ret ? textColor_HL : textColor_OFF,
+                    MagicUI.addText(null, NA_CombatPlugin.title, textColor_OFF, new Vector2f(XX+ textxoff + titlexoff, YY + textoff + textheight), false);
+                MagicUI.addText(null, "Retreat", NA_CombatPlugin.commandMode == NA_CombatPlugin.CommandMode.RETREAT_COMMAND ? textColor_ON : hl_ret ? textColor_HL : textColor_OFF,
                         new Vector2f(XX+ textxoff, YY + textoff), false);
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "Escort", NA_CombatPlugin.commandMode == NA_CombatPlugin.CommandMode.ESCORT_COMMAND ? textColor_ON : hl_esc ? textColor_HL : textColor_OFF,
+                MagicUI.addText(null, "Escort", NA_CombatPlugin.commandMode == NA_CombatPlugin.CommandMode.ESCORT_COMMAND ? textColor_ON : hl_esc ? textColor_HL : textColor_OFF,
                         new Vector2f(XX+ textxoff + textSpacing, YY + textoff), false);
-                MagicUI.addText(Global.getCombatEngine().getPlayerShip(), "S&D", NA_CombatPlugin.commandMode == NA_CombatPlugin.CommandMode.SEARCHANDDESTROY_COMMAND ? textColor_ON : hl_snd ? textColor_HL : textColor_OFF,
+                MagicUI.addText(null, "S&D", NA_CombatPlugin.commandMode == NA_CombatPlugin.CommandMode.SEARCHANDDESTROY_COMMAND ? textColor_ON : hl_snd ? textColor_HL : textColor_OFF,
                         new Vector2f(XX+ textxoff + 2 * textSpacing, YY + textoff), false);
 
             }

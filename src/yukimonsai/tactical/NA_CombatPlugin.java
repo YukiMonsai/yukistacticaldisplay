@@ -17,7 +17,11 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
     public static String title = "Nightcross Tactical Display";
 
-    public static HashMap<DeployedFleetMemberAPI, ShipIcon> iconMap = new HashMap<DeployedFleetMemberAPI, ShipIcon>();
+    public static HashMap<DeployedFleetMemberAPI, ShipIcon>[] iconMap = new HashMap[2];
+    static {
+        iconMap[0] = new HashMap<DeployedFleetMemberAPI, ShipIcon>();
+        iconMap[1] = new HashMap<DeployedFleetMemberAPI, ShipIcon>();
+    }
 
     public static List<GetShipIconListener> GetShipIconListeners = new ArrayList<GetShipIconListener>();
     static {
@@ -154,7 +158,8 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
                             if (e.isMouseDownEvent())
                                 commandMode = CommandMode.NONE;
-                        }
+                        } else if (!e.isLMBDownEvent() && e.isMouseDownEvent())
+                            commandMode = CommandMode.NONE;
 
                     }
                     if (cancel != null) {
@@ -219,14 +224,14 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         // filter
         for (DeployedFleetMemberAPI member : members) {
             if (member.getMember().isAlly()) continue; // allies manage themselves
-            if (iconMap.get(member) != null) {
-                newIconMap.put(member, iconMap.get(member));
+            if (iconMap[side].get(member) != null && iconMap[side].get(member).maintain()) {
+                newIconMap.put(member, iconMap[side].get(member));
             } else {
                 ShipIcon icon = getIconClassForMember(member);
                 if (icon != null)
                     newIconMap.put(member, icon);
             }
-            if (iconMap.containsKey(member)) {
+            if (iconMap[side].containsKey(member)) {
                 if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP) capitals.add(member);
                 else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.CRUISER) cruisers.add(member);
                 else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.DESTROYER) destroyers.add(member);
@@ -235,7 +240,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
 
         }
-        iconMap = newIconMap;
+        iconMap[side] = newIconMap;
 
         // build the render list
         List<List<DeployedFleetMemberAPI>> display = new ArrayList<List<DeployedFleetMemberAPI>>();
@@ -269,8 +274,8 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             list.sort(new Comparator<DeployedFleetMemberAPI>() {
                 @Override
                 public int compare(DeployedFleetMemberAPI o1, DeployedFleetMemberAPI o2) {
-                    if (iconMap.containsKey(o1) && iconMap.containsKey(o2)) {
-                        return (int) (iconMap.get(o1).getSortValue() - iconMap.get(o2).getSortValue());
+                    if (iconMap[side].containsKey(o1) && iconMap[side].containsKey(o2)) {
+                        return (int) (iconMap[side].get(o1).getSortValue() - iconMap[side].get(o2).getSortValue());
                     }
                     boolean retreating1 = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(o1.getShip()) != null
                             && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(o1.getShip()).getType().equals(CombatAssignmentType.RETREAT);
@@ -432,18 +437,18 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             if (list.isEmpty()) continue;
             for (DeployedFleetMemberAPI member : list) {
                 if (input != InputType.NO_INPUT) {
-                    if (iconMap.containsKey(member)) {
+                    if (iconMap[side].containsKey(member)) {
                         if (input == InputType.HOLD) {
-                            if (iconMap.get(member).handleHold(flip, flipv, XX, YY, w, h, assignmentList, e)) {
+                            if (iconMap[side].get(member).handleHold(flip, flipv, XX, YY, w, h, assignmentList, e)) {
                                 return true;
                             }
-                        } else if (iconMap.get(member).handleInput(flip, flipv, XX, YY, w, h, assignmentList, e)) {
+                        } else if (iconMap[side].get(member).handleInput(flip, flipv, XX, YY, w, h, assignmentList, e)) {
 
                             return true;
                         }
                     }
                 } else {
-                    if (iconMap.containsKey(member)) iconMap.get(member).render(flip, flipv, XX, YY, w, h, assignmentList, true, sineAmt, refreshUI, refreshData);
+                    if (iconMap[side].containsKey(member)) iconMap[side].get(member).render(flip, flipv, XX, YY, w, h, assignmentList, true, sineAmt, refreshUI, refreshData);
                 }
 
                 XX += Xspacing;

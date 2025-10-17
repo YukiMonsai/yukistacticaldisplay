@@ -465,4 +465,10 @@ public class ShipIconImpl implements ShipIcon {
 
         return false;
     }
+
+    @Override
+    public boolean maintain() {
+        // remove if the ship is dead
+        return ship.isAlive();
+    }
 }
