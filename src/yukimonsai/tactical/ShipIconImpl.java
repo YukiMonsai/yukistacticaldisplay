@@ -120,10 +120,96 @@ public class ShipIconImpl implements ShipIcon {
         }
 
         sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-        sprite.setAdditiveBlend();
+        //sprite.setAdditiveBlend();
         sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
         sprite.setNormalBlend();
 
+
+        if (((side == 0 && !NA_SettingsListener.na_combatui_armor) || (side == 1 && !NA_SettingsListener.na_combatui_noenemyarmor))) {
+            if (ship.getArmorGrid() != null && ship.getArmorGrid().getArmorRating() > ARMOR_THRESH) {
+                // armor
+
+
+                float armor = ship.getArmorGrid().getArmorRating();
+                float armorThresh = 1f + Math.max(ARMOR_THRESH,  armor*.35f);
+
+                if (DataUpdate) {
+                    updateArmor();
+                }
+
+
+
+                if (armor_l > 0) {
+                    float ar = Math.max(0, Math.min(1f, (armor_l-armorThresh)/(armor - armorThresh)));
+                    Color armorColor = NA_SettingsListener.na_combatui_colorblind ?
+                            new Color(250 - (int)(colorScale * 0.8 * ar), 50 + (int)(0.7f * colorScale * ar), 50 + (int)(colorScale * ar), 220)
+                            : new Color(250 - (int)(colorScale * 0.9 * ar), 50 + (int)(colorScale * ar), 50, 220);
+
+                    sprite = Global.getSettings().getSprite("icons", "ytd_armor_l");
+                    sprite.setSize(ascalemult*w, ascalemult*h);
+                    sprite.setColor(armorColor);
+                    if (armor_l < armorThresh)
+                        sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
+                    else sprite.setAlphaMult(NA_SettingsListener.na_combatui_armorAlpha);
+                    sprite.setNormalBlend();
+                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
+                    sprite.setAdditiveBlend();
+                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
+                }
+                if (armor_r > 0) {
+                    float ar = Math.max(0, Math.min(1f, (armor_r-armorThresh)/(armor - armorThresh)));
+                    Color armorColor = NA_SettingsListener.na_combatui_colorblind ?
+                            new Color(250 - (int)(colorScale * 0.8 * ar), 50 + (int)(0.7f * colorScale * ar), 50 + (int)(colorScale * ar), 220)
+                            : new Color(250 - (int)(colorScale * 0.9 * ar), 50 + (int)(colorScale * ar), 50, 220);
+
+                    sprite = Global.getSettings().getSprite("icons", "ytd_armor_r");
+                    sprite.setSize(ascalemult*w, ascalemult*h);
+                    sprite.setColor(armorColor);
+                    if (armor_r < armorThresh)
+                        sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
+                    else sprite.setAlphaMult(NA_SettingsListener.na_combatui_armorAlpha);
+                    sprite.setNormalBlend();
+                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
+                    sprite.setAdditiveBlend();
+                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
+                }
+                if (armor_u > 0) {
+                    float ar = Math.max(0, Math.min(1f, (armor_u-armorThresh)/(armor - armorThresh)));
+                    Color armorColor = NA_SettingsListener.na_combatui_colorblind ?
+                            new Color(250 - (int)(colorScale * 1.1 * ar), 25 + (int)(0.8f * colorScale * ar), 25 + (int)(1.1*colorScale * ar), 240)
+                            : new Color(250 - (int)(colorScale * 1.1 * ar), 25 + (int)(1.1*colorScale * ar), 25, 240);
+
+                    sprite = Global.getSettings().getSprite("icons", "ytd_armor_u");
+                    sprite.setSize(ascalemult*w, ascalemult*h);
+                    sprite.setColor(armorColor);
+                    if (armor_u < armorThresh)
+                        sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
+                    else sprite.setAlphaMult(NA_SettingsListener.na_combatui_armorAlpha);
+                    sprite.setNormalBlend();
+                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
+                    sprite.setAdditiveBlend();
+                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
+                }
+                if (armor_d > 0) {
+                    float ar = Math.max(0, Math.min(1f, (armor_d-armorThresh)/(armor - armorThresh)));
+                    Color armorColor = NA_SettingsListener.na_combatui_colorblind ?
+                            new Color(250 - (int)(colorScale * 0.8 * ar), 50 + (int)(0.7f * colorScale * ar), 50 + (int)(colorScale * ar), 220)
+                            : new Color(250 - (int)(colorScale * 0.9 * ar), 50 + (int)(colorScale * ar), 50, 220);
+
+                    sprite = Global.getSettings().getSprite("icons", "ytd_armor_d");
+                    sprite.setSize(ascalemult*w, ascalemult*h);
+                    sprite.setColor(armorColor);
+                    if (armor_d < armorThresh)
+                        sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
+                    else sprite.setAlphaMult(NA_SettingsListener.na_combatui_armorAlpha);
+                    sprite.setNormalBlend();
+                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
+                    sprite.setAdditiveBlend();
+                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
+                }
+
+            }
+        }
 
         float yyy = 0;
         if (ship == Global.getCombatEngine().getPlayerShip()) {
@@ -220,91 +306,7 @@ public class ShipIconImpl implements ShipIcon {
         float off = 0;
         float SPACE = 9;
 
-        if (((side == 0 && !NA_SettingsListener.na_combatui_armor) || (side == 1 && !NA_SettingsListener.na_combatui_noenemyarmor))) {
-            if (ship.getArmorGrid() != null && ship.getArmorGrid().getArmorRating() > ARMOR_THRESH) {
-                // armor
 
-
-                float armor = ship.getArmorGrid().getArmorRating();
-                float armorThresh = 1f + Math.max(ARMOR_THRESH,  armor*.35f);
-
-                if (DataUpdate) {
-                    updateArmor();
-                }
-
-
-
-                if (armor_l > 0) {
-                    float ar = Math.max(0, Math.min(1f, (armor_l-armorThresh)/(armor - armorThresh)));
-                    Color armorColor = NA_SettingsListener.na_combatui_colorblind ?
-                            new Color(250 - (int)(colorScale * 0.8 * ar), 50 + (int)(0.7f * colorScale * ar), 50 + (int)(colorScale * ar), 220)
-                            : new Color(250 - (int)(colorScale * 0.9 * ar), 50 + (int)(colorScale * ar), 50, 220);
-
-                    sprite = Global.getSettings().getSprite("icons", "ytd_armor_l");
-                    sprite.setSize(ascalemult*w, ascalemult*h);
-                    sprite.setColor(armorColor);
-                    if (armor_l < armorThresh)
-                        sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
-                    else sprite.setAlphaMult(NA_SettingsListener.na_combatui_armorAlpha);
-                    sprite.setNormalBlend();
-                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                    sprite.setAdditiveBlend();
-                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                }
-                if (armor_r > 0) {
-                    float ar = Math.max(0, Math.min(1f, (armor_r-armorThresh)/(armor - armorThresh)));
-                    Color armorColor = NA_SettingsListener.na_combatui_colorblind ?
-                            new Color(250 - (int)(colorScale * 0.8 * ar), 50 + (int)(0.7f * colorScale * ar), 50 + (int)(colorScale * ar), 220)
-                            : new Color(250 - (int)(colorScale * 0.9 * ar), 50 + (int)(colorScale * ar), 50, 220);
-
-                    sprite = Global.getSettings().getSprite("icons", "ytd_armor_r");
-                    sprite.setSize(ascalemult*w, ascalemult*h);
-                    sprite.setColor(armorColor);
-                    if (armor_r < armorThresh)
-                        sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
-                    else sprite.setAlphaMult(NA_SettingsListener.na_combatui_armorAlpha);
-                    sprite.setNormalBlend();
-                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                    sprite.setAdditiveBlend();
-                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                }
-                if (armor_u > 0) {
-                    float ar = Math.max(0, Math.min(1f, (armor_u-armorThresh)/(armor - armorThresh)));
-                    Color armorColor = NA_SettingsListener.na_combatui_colorblind ?
-                            new Color(250 - (int)(colorScale * 1.1 * ar), 25 + (int)(0.8f * colorScale * ar), 25 + (int)(1.1*colorScale * ar), 240)
-                            : new Color(250 - (int)(colorScale * 1.1 * ar), 25 + (int)(1.1*colorScale * ar), 25, 240);
-
-                    sprite = Global.getSettings().getSprite("icons", "ytd_armor_u");
-                    sprite.setSize(ascalemult*w, ascalemult*h);
-                    sprite.setColor(armorColor);
-                    if (armor_u < armorThresh)
-                        sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
-                    else sprite.setAlphaMult(NA_SettingsListener.na_combatui_armorAlpha);
-                    sprite.setNormalBlend();
-                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                    sprite.setAdditiveBlend();
-                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                }
-                if (armor_d > 0) {
-                    float ar = Math.max(0, Math.min(1f, (armor_d-armorThresh)/(armor - armorThresh)));
-                    Color armorColor = NA_SettingsListener.na_combatui_colorblind ?
-                            new Color(250 - (int)(colorScale * 0.8 * ar), 50 + (int)(0.7f * colorScale * ar), 50 + (int)(colorScale * ar), 220)
-                            : new Color(250 - (int)(colorScale * 0.9 * ar), 50 + (int)(colorScale * ar), 50, 220);
-
-                    sprite = Global.getSettings().getSprite("icons", "ytd_armor_d");
-                    sprite.setSize(ascalemult*w, ascalemult*h);
-                    sprite.setColor(armorColor);
-                    if (armor_d < armorThresh)
-                        sprite.setAlphaMult(0.59f - 0.4f * sineAmt);
-                    else sprite.setAlphaMult(NA_SettingsListener.na_combatui_armorAlpha);
-                    sprite.setNormalBlend();
-                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                    sprite.setAdditiveBlend();
-                    sprite.renderAtCenter(XX + w * 0.5f, YY + h * 0.5f);
-                }
-
-            }
-        }
 
         if (((side == 0 && !NA_SettingsListener.na_combatui_ppt) || (side == 1 && !NA_SettingsListener.na_combatui_noenemyppt))) {
 

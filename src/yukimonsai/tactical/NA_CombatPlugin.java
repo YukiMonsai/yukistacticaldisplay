@@ -231,7 +231,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 if (icon != null)
                     newIconMap.put(member, icon);
             }
-            if (iconMap[side].containsKey(member)) {
+            if (newIconMap.containsKey(member)) {
                 if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP) capitals.add(member);
                 else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.CRUISER) cruisers.add(member);
                 else if (member.getMember().getHullSpec().getHullSize() == ShipAPI.HullSize.DESTROYER) destroyers.add(member);
@@ -390,19 +390,20 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             YY = NA_SettingsListener.tacticalRenderHeightOffset + (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0) - 20;
 
             for (List<DeployedFleetMemberAPI> list : display) {
-                sizedUpTicks--;
-                if (list.isEmpty()) continue;
+                if (list.isEmpty()) {sizedUpTicks--; continue;}
                 if (!setTextOff && sizedUpTicks > -1) {
-                    TEXTOFF += shipSizeScale * (sizedUpTicks + 1);
+                    TEXTOFF += shipSizeScale * (sizedUpTicks);
                     setTextOff = true;
-                    XX += (flip ? -1 : 1)*shipSizeScale;
+                    //XX += (flip ? -1 : 1)*shipSizeScale;
                 }
                 if (!list.isEmpty()) {
-                    if (shipSizeScale > 0 && sizedUpTicks > 0) {
-                        YY += shipSizeScale * sizedUpTicks;
+                    if (shipSizeScale > 0 && sizedUpTicks >= 0) {
+                        YY += 0.5*shipSizeScale * (sizedUpTicks+1);
+                        YY += 0.5*shipSizeScale * (sizedUpTicks);
                     }
                     YY -= Yspacing;
                 }
+                sizedUpTicks--;
             }
         }
 
@@ -431,9 +432,11 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             w += sizedUpTicks*shipSizeScale;
             h += sizedUpTicks*shipSizeScale;
             Xspacing += sizedUpTicks*(flip ? -1 : 1) * shipSizeScale;
-            Yspacing -= Math.max(0, sizedUpTicks-1)*shipSizeScale;
 
+            // jank but important since sprites are centered
+            Yspacing -= 0.5f*Math.max(0, sizedUpTicks)*shipSizeScale;
             sizedUpTicks--;
+            Yspacing -= 0.5f*Math.max(0, sizedUpTicks)*shipSizeScale;
             if (list.isEmpty()) continue;
             for (DeployedFleetMemberAPI member : list) {
                 if (input != InputType.NO_INPUT) {
