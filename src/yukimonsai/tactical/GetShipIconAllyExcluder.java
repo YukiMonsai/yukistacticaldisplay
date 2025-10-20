@@ -7,7 +7,7 @@ public class GetShipIconAllyExcluder implements GetShipIconListener{
         return null;//this EXCLUDES all dead ship
     }
     public float getScore(DeployedFleetMemberAPI member) {
-        if (!member.isAlly()) return 100;
+        if (member.isAlly()) return 100;
         else return -100;
     }
 }

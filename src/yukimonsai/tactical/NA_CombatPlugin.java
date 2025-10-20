@@ -339,34 +339,34 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 float factor = NA_SettingsListener.na_combatui_sizedynamic/maxSizex;
 
                 float diff = w;
+                Yspacing += h;
                 h *= factor;
                 w *= factor;
                 w = (int) Math.max(dynamicMin, Math.min(max_size, w));
                 h = (int) Math.max(dynamicMin, Math.min(max_size, h));
                 diff = w / diff;
                 Xspacing *= diff;
-                Yspacing *= diff;
                 shipSizeScale *= diff;
-                Xspacing = (int)Xspacing;
-                Yspacing = (int)Yspacing;
-                shipSizeScale = (int)shipSizeScale;
+                Xspacing = Xspacing;
+                Yspacing = (Yspacing - h);
+                shipSizeScale = shipSizeScale;
 
             }
             if (NA_SettingsListener.na_combatui_sizedynamicy > 0 && maxSizey > NA_SettingsListener.na_combatui_sizedynamicy) {
                 float factor = NA_SettingsListener.na_combatui_sizedynamicy/maxSizey;
 
                 float diff = h;
+                Yspacing += h;
                 h *= factor;
                 w *= factor;
                 w = (int) Math.max(dynamicMin, Math.min(max_size, w));
                 h = (int) Math.max(dynamicMin, Math.min(max_size, h));
-                diff = w / diff;
+                diff = h / diff;
                 Xspacing *= diff;
-                Yspacing *= diff;
                 shipSizeScale *= diff;
-                Xspacing = (int)Xspacing;
-                Yspacing = (int)Yspacing;
-                shipSizeScale = (int)shipSizeScale;
+                Xspacing = Xspacing;
+                Yspacing = (Yspacing - h);
+                shipSizeScale = shipSizeScale;
             }
         }
 
@@ -389,20 +389,21 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         boolean setTextOff = false;
         float XX = XXstart;
         if (flipv) {
-            YY = NA_SettingsListener.tacticalRenderHeightOffset + (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0) - 20;
+            YY = NA_SettingsListener.tacticalRenderHeightOffset + (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0);
 
             for (List<DeployedFleetMemberAPI> list : display) {
                 if (list.isEmpty()) {sizedUpTicks--; continue;}
                 if (!setTextOff && sizedUpTicks > -1) {
                     TEXTOFF += shipSizeScale * (sizedUpTicks);
                     setTextOff = true;
-                    YY += shipSizeScale * (sizedUpTicks);
+                    //YY += 0.5*shipSizeScale * (sizedUpTicks);
                     //XX += (flip ? -1 : 1)*shipSizeScale;
                 }
                 if (!list.isEmpty()) {
                     if (shipSizeScale > 0 && sizedUpTicks >= 0) {
-                        YY += 0.5*shipSizeScale * (sizedUpTicks+1);
-                        YY += 0.5*shipSizeScale * (sizedUpTicks);
+                        //YY += 0.5*shipSizeScale * (sizedUpTicks);
+                        YY += 0.5f*shipSizeScale * Math.max(0f, sizedUpTicks);
+                        YY += 0.5f*shipSizeScale * Math.max(0f, sizedUpTicks-1);
                     }
                     YY -= Yspacing;
                 }
@@ -423,7 +424,9 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         float ySpacing_orig = Yspacing;
 
         sizedUpTicks = 3;
+        int ii = 0;
         for (List<DeployedFleetMemberAPI> list : display) {
+
 
             XX = XXstart + (flip ? -1 : 1) * sizedUpTicks * (shipSizeScale);
 
@@ -437,18 +440,22 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             Xspacing += sizedUpTicks*(flip ? -1 : 1) * shipSizeScale;
 
             // jank but important since sprites are centered
-            Yspacing -= 0.5f*Math.max(0, sizedUpTicks)*shipSizeScale;
+            if (ii>0 && !list.isEmpty()) {
+                Yspacing -= 0.5f*Math.max(0, sizedUpTicks)*shipSizeScale;
+                Yspacing -= 0.5f*Math.max(0, sizedUpTicks-1)*shipSizeScale;
+                YY += ii == 4 ? -h : Yspacing;
+            }
             sizedUpTicks--;
-            Yspacing -= 0.5f*Math.max(0, sizedUpTicks)*shipSizeScale;
+            ii++;
             if (list.isEmpty()) continue;
             for (DeployedFleetMemberAPI member : list) {
                 if (input != InputType.NO_INPUT) {
                     if (iconMap[side].containsKey(member)) {
                         if (input == InputType.HOLD) {
-                            if (iconMap[side].get(member).handleHold(flip, flipv, XX, YY, w, h, assignmentList, e)) {
+                            if (iconMap[side].get(member).handleHold(flip, flipv, (int)XX, (int)YY, (int)w, (int)h, assignmentList, e)) {
                                 return true;
                             }
-                        } else if (iconMap[side].get(member).handleInput(flip, flipv, XX, YY, w, h, assignmentList, e)) {
+                        } else if (iconMap[side].get(member).handleInput(flip, flipv, (int)XX, (int)YY, (int)w, (int)h, assignmentList, e)) {
 
                             return true;
                         }
@@ -460,7 +467,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 XX += Xspacing;
             }
             //XX = XXstart;
-            YY += Yspacing;
+
         }
         return false;
     }
