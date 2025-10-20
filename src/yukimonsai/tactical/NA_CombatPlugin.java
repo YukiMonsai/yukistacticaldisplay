@@ -321,18 +321,19 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             float maxSizey = 0;
             float rows = 0;
             float cols = 0;
+            float sizedUpTicks = 3;
             for (List<DeployedFleetMemberAPI> list : display) {
-                if (list.isEmpty()) continue;
+                cols = 0;
+                if (list.isEmpty()) {sizedUpTicks--; continue;}
                 rows += 1;
                 for (DeployedFleetMemberAPI member : list) {
                     cols += 1;
                 }
-                maxSizex = Math.max(maxSizex, cols*x_spacing);
+                maxSizex = Math.max(maxSizex, cols*(x_spacing + shipSizeScale * sizedUpTicks));
+                maxSizey += rows*(Math.abs(y_spacing) + shipSizeScale * sizedUpTicks);
+                sizedUpTicks--;
             }
-            if (rows > 0 && cols > 0) {
-                maxSizey = rows*Math.abs(y_spacing);
-            }
-            float dynamicMin = Math.min(min_size, NA_SettingsListener.na_combatui_sizedynamicmin);
+            float dynamicMin = Math.max(min_size, NA_SettingsListener.na_combatui_sizedynamicmin);
             if (NA_SettingsListener.na_combatui_sizedynamic > 0 && maxSizex > NA_SettingsListener.na_combatui_sizedynamic) {
                 float factor = NA_SettingsListener.na_combatui_sizedynamic/maxSizex;
 
@@ -394,6 +395,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 if (!setTextOff && sizedUpTicks > -1) {
                     TEXTOFF += shipSizeScale * (sizedUpTicks);
                     setTextOff = true;
+                    YY += 0.5*shipSizeScale * (sizedUpTicks);
                     //XX += (flip ? -1 : 1)*shipSizeScale;
                 }
                 if (!list.isEmpty()) {
@@ -408,7 +410,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         }
 
         for (DisplayDrawListener listener : DisplayDrawListeners) {
-            if (listener.draw(input, side, flip, flipv, XX, YY, TEXTXOFF, TEXTOFF, TEXTHEIGHT, TITLEXOFF, textSpacing, e)) {
+            if (listener.draw(input, side, flip, flipv, (int) XX, (int) YY, (int) TEXTXOFF, (int) TEXTOFF, (int) TEXTHEIGHT, (int) TITLEXOFF, (int) textSpacing, e)) {
 
                 return true;
             }
@@ -451,7 +453,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                         }
                     }
                 } else {
-                    if (iconMap[side].containsKey(member)) iconMap[side].get(member).render(flip, flipv, XX, YY, w, h, assignmentList, true, sineAmt, refreshUI, refreshData);
+                    if (iconMap[side].containsKey(member)) iconMap[side].get(member).render(flip, flipv, (int) XX, (int) YY, (int) w, (int) h, assignmentList, true, sineAmt, refreshUI, refreshData);
                 }
 
                 XX += Xspacing;

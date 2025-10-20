@@ -280,7 +280,7 @@ public class ShipIconImpl implements ShipIcon {
 
         if (side == 0 || !NA_SettingsListener.na_combatui_noenemyinfo) {
             if (!NA_SettingsListener.na_combatui_info && retreating) {
-                MagicUI.addText(ship, (NA_SettingsListener.na_combatui_hspace + NA_SettingsListener.na_combatui_size < 55) ? ((NA_SettingsListener.na_combatui_hspace + NA_SettingsListener.na_combatui_size <= 46) ? "ret." : "retr.") : "retreat", RETREAT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                MagicUI.addText(ship, (w*1.25f < 55) ? ((w*1.25f <= 46) ? "ret." : "retr.") : "retreat", RETREAT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
                 yyy -= 9;
             } else if (!NA_SettingsListener.na_combatui_info) {
                 if (sineAmt > 0 && ship != Global.getCombatEngine().getPlayerShip()
@@ -372,8 +372,11 @@ public class ShipIconImpl implements ShipIcon {
                     if (!assignmentList.containsKey(ship.getId())) {
 
                         if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship) != null) {
-                            Global.getCombatEngine().getFleetManager(side).getTaskManager(false).removeAssignment(
-                                    Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship));
+                            Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getAssignedMembers().remove(ship);
+                            if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getAssignedMembers().isEmpty()) {
+                                Global.getCombatEngine().getFleetManager(side).getTaskManager(false).removeAssignment(
+                                        Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship));
+                            }
                         }
 
 
@@ -381,8 +384,11 @@ public class ShipIconImpl implements ShipIcon {
                         Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
                     } else if (assignmentList.containsKey(ship.getId())) {
 
-                        Global.getCombatEngine().getFleetManager(side).getTaskManager(false).removeAssignment(
-                                assignmentList.get(ship.getId()));
+                        Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getAssignedMembers().remove(ship);
+                        if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getAssignedMembers().isEmpty()) {
+                            Global.getCombatEngine().getFleetManager(side).getTaskManager(false).removeAssignment(
+                                    assignmentList.get(ship.getId()));
+                        }
                         Global.getSoundPlayer().playUISound("ui_button_full_retreat", 1f, 1f);
                     }
                 } else if (commandMode == NA_CombatPlugin.CommandMode.SEARCHANDDESTROY_COMMAND) {
@@ -407,8 +413,12 @@ public class ShipIconImpl implements ShipIcon {
                             || !Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getType().equals(CombatAssignmentType.RETREAT)) {
 
                         if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship) != null) {
-                            Global.getCombatEngine().getFleetManager(side).getTaskManager(false).removeAssignment(
-                                    Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship));
+                            Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getAssignedMembers().remove(ship);
+                            if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getAssignedMembers().isEmpty()) {
+                                Global.getCombatEngine().getFleetManager(side).getTaskManager(false).removeAssignment(
+                                        Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship));
+                            }
+
                         }
 
 
