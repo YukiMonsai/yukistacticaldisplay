@@ -27,7 +27,8 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
     static {
         GetShipIconListeners.add(new GetShipIconModuleExcluder());
         GetShipIconListeners.add(new GetShipIconDeadExcluder());
-}
+        GetShipIconListeners.add(new GetShipIconAllyExcluder());
+    }
     public static List<DisplayDrawListener> DisplayDrawListeners = new ArrayList<DisplayDrawListener>();
     static {
         DisplayDrawListeners.add(new BaseDisplayDrawListenerImpl());
@@ -395,7 +396,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 if (!setTextOff && sizedUpTicks > -1) {
                     TEXTOFF += shipSizeScale * (sizedUpTicks);
                     setTextOff = true;
-                    YY += 0.5*shipSizeScale * (sizedUpTicks);
+                    YY += shipSizeScale * (sizedUpTicks);
                     //XX += (flip ? -1 : 1)*shipSizeScale;
                 }
                 if (!list.isEmpty()) {
