@@ -347,9 +347,9 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 diff = w / diff;
                 Xspacing *= diff;
                 shipSizeScale *= diff;
-                Xspacing = Xspacing;
+                //Xspacing = Xspacing;
                 Yspacing = (Yspacing - h);
-                shipSizeScale = shipSizeScale;
+                //shipSizeScale = shipSizeScale;
 
             }
             if (NA_SettingsListener.na_combatui_sizedynamicy > 0 && maxSizey > NA_SettingsListener.na_combatui_sizedynamicy) {
@@ -364,9 +364,9 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 diff = h / diff;
                 Xspacing *= diff;
                 shipSizeScale *= diff;
-                Xspacing = Xspacing;
+                //Xspacing = Xspacing;
                 Yspacing = (Yspacing - h);
-                shipSizeScale = shipSizeScale;
+                //shipSizeScale = shipSizeScale;
             }
         }
 
@@ -376,39 +376,50 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 Global.getSettings().getScreenWidthPixels() - NA_SettingsListener.tacticalRenderSideOffset - w - (side == 1 ? NA_SettingsListener.tacticalRenderSideOffsetEnemy : 0);
 
 
-        float TEXTOFF = 30 + h;
+        float TEXTOFF = 30 + h/2;
         float TEXTHEIGHT = 20;
         float textSpacing = 100;
         float TEXTXOFF = !flip ? 0 : -2*textSpacing;
         float TITLEXOFF = !flip ? 12 : 12;
         float sineAmt = (float) Math.sin(9f * engine.getTotalElapsedTime(true) % (2*Math.PI));
 
-
-        float movedUpExtra = 0;
         float sizedUpTicks = 3;
-        boolean setTextOff = false;
+
+        float count = 0;
+        sizedUpTicks = 3;
+
+        if (shipSizeScale > 0) {
+            for (List<DeployedFleetMemberAPI> list : display) {
+                if (!list.isEmpty()) {
+                    TEXTOFF += 0.5f * shipSizeScale * (sizedUpTicks);
+                    break;
+                } else {
+                    sizedUpTicks--;
+                }
+
+            }
+        }
+
+        count = 0;
+        float smallestSize = 3;
         float XX = XXstart;
         if (flipv) {
             YY = NA_SettingsListener.tacticalRenderHeightOffset + (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0);
-
             for (List<DeployedFleetMemberAPI> list : display) {
                 if (list.isEmpty()) {sizedUpTicks--; continue;}
-                if (!setTextOff && sizedUpTicks > -1) {
-                    TEXTOFF += shipSizeScale * (sizedUpTicks);
-                    setTextOff = true;
+
+                if (shipSizeScale > 0 && sizedUpTicks >= 0) {
                     //YY += 0.5*shipSizeScale * (sizedUpTicks);
-                    //XX += (flip ? -1 : 1)*shipSizeScale;
+                    YY += shipSizeScale * Math.max(0f, sizedUpTicks);
                 }
-                if (!list.isEmpty()) {
-                    if (shipSizeScale > 0 && sizedUpTicks >= 0) {
-                        //YY += 0.5*shipSizeScale * (sizedUpTicks);
-                        YY += 0.5f*shipSizeScale * Math.max(0f, sizedUpTicks);
-                        YY += 0.5f*shipSizeScale * Math.max(0f, sizedUpTicks-1);
-                    }
-                    YY -= Yspacing;
-                }
+                count++;
                 sizedUpTicks--;
             }
+
+
+            YY -= (Yspacing + h) * Math.max(count-1, 0);
+            YY += (h) * Math.max(count-1, 0);
+
         }
 
         for (DisplayDrawListener listener : DisplayDrawListeners) {
@@ -425,6 +436,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
 
         sizedUpTicks = 3;
         int ii = 0;
+        int drawn = 0;
         for (List<DeployedFleetMemberAPI> list : display) {
 
 
@@ -440,14 +452,20 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             Xspacing += sizedUpTicks*(flip ? -1 : 1) * shipSizeScale;
 
             // jank but important since sprites are centered
-            if (ii>0 && !list.isEmpty()) {
-                Yspacing -= 0.5f*Math.max(0, sizedUpTicks)*shipSizeScale;
-                Yspacing -= 0.5f*Math.max(0, sizedUpTicks-1)*shipSizeScale;
-                YY += ii == 4 ? -h : Yspacing;
+            if (!list.isEmpty()) {
+                if (drawn>0) {
+                    Yspacing -= Math.max(0, sizedUpTicks)*shipSizeScale;
+                    YY += Yspacing;
+                } else {
+
+                    YY -= h/2;
+                }
             }
+
             sizedUpTicks--;
             ii++;
             if (list.isEmpty()) continue;
+            drawn++;
             for (DeployedFleetMemberAPI member : list) {
                 if (input != InputType.NO_INPUT) {
                     if (iconMap[side].containsKey(member)) {
