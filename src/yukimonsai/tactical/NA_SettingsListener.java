@@ -29,6 +29,10 @@ public class NA_SettingsListener implements LunaSettingsListener {
     public static int na_combatui_sizedynamicmin = LunaSettings.getInt("yukistacticaldisplay", "na_combatui_sizedynamicmin");
     public static int na_combatui_enemysize = LunaSettings.getInt("yukistacticaldisplay", "na_combatui_enemysize");
     public static int na_combatui_sizematters = LunaSettings.getInt("yukistacticaldisplay", "na_combatui_sizematters");
+    public static boolean na_autoescort = LunaSettings.getBoolean("yukistacticaldisplay", "na_autoescort");
+    public static boolean na_autoescort_ipdai_frig = LunaSettings.getBoolean("yukistacticaldisplay", "na_autoescort_ipdai_frig");
+    public static boolean na_autoescort_enemy = LunaSettings.getBoolean("yukistacticaldisplay", "na_autoescort_enemy");
+
 
 
 
@@ -52,6 +56,7 @@ public class NA_SettingsListener implements LunaSettingsListener {
     //Gets called whenever settings are saved in the campaign or the main menu.
     @Override
     public void settingsChanged(String modID) {
+        na_autoescort = LunaSettings.getBoolean("yukistacticaldisplay", "na_autoescort");
         na_combatui_enable = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_enable");
         na_combatui_pause = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_pause");
         na_combatui_colorblind = LunaSettings.getBoolean("yukistacticaldisplay", "na_combatui_colorblind");
@@ -83,6 +88,8 @@ public class NA_SettingsListener implements LunaSettingsListener {
         na_combatui_sizedynamicmin = LunaSettings.getInt("yukistacticaldisplay", "na_combatui_sizedynamicmin");
         na_combatui_enemysize = LunaSettings.getInt("yukistacticaldisplay", "na_combatui_enemysize");
         na_combatui_sizematters = LunaSettings.getInt("yukistacticaldisplay", "na_combatui_sizematters");
+        na_autoescort_ipdai_frig = LunaSettings.getBoolean("yukistacticaldisplay", "na_autoescort_ipdai_frig");
+        na_autoescort_enemy = LunaSettings.getBoolean("yukistacticaldisplay", "na_autoescort_enemy");
 
     }
 }

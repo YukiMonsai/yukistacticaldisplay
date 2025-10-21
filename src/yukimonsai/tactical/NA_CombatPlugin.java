@@ -2,9 +2,11 @@ package yukimonsai.tactical;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.combat.*;
+import com.fs.starfarer.api.impl.campaign.ids.HullMods;
 import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.input.InputEventType;
 import com.fs.starfarer.api.util.IntervalUtil;
+import lunalib.backend.util.ReflectionUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -179,6 +181,8 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
     }
 
     static boolean autoPilotWasOn = false;
+    static boolean autoAssignedRoles = false;
+    static IntervalUtil autoAssignTimer = new IntervalUtil(3.0f, 3.0f);
 
     @Override
     public void advance(float amount, List<InputEventAPI> events) {
@@ -190,6 +194,116 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             dataRefreshTimer.setElapsed(0);
             refreshData = true;
         } else dataRefreshTimer.advance(amount);
+
+        if (!autoAssignedRoles && !Global.getCombatEngine().isPaused()) {
+            if (!autoAssignTimer.intervalElapsed()) {
+                autoAssignTimer.advance(amount);
+            } else {
+                autoAssignedRoles = true;
+                autoAssignTimer = new IntervalUtil(autoAssignTimer.getMinInterval(), autoAssignTimer.getMaxInterval());
+                autoAssignRoles(0);
+                if (NA_SettingsListener.na_autoescort_enemy) {
+                    autoAssignRoles(1);
+                }
+            }
+        } else if (Global.getCombatEngine().getTotalElapsedTime(false) < 1.0) {
+            autoAssignedRoles = false;
+        }
+    }
+
+    public void autoAssignRoles(int side) {
+        if (NA_SettingsListener.na_autoescort) {
+            // Wont touch existing escort orders
+            //HashMap<DeployedFleetMemberAPI, CombatFleetManagerAPI.AssignmentInfo> alreadyHaveEscort = new HashMap<>();
+            // This ship does NOT have an escort and can be assigned one.
+            HashMap<DeployedFleetMemberAPI, CombatFleetManagerAPI.AssignmentInfo> noEscort = new HashMap<>();
+            // New escorts created--we assign to these
+            HashMap<DeployedFleetMemberAPI, CombatFleetManagerAPI.AssignmentInfo> assignedEscorts = new HashMap<>();
+            // ships that need assignment
+            HashMap<DeployedFleetMemberAPI, CombatFleetManagerAPI.AssignmentInfo> needAssignment = new HashMap<>();
+
+            for (DeployedFleetMemberAPI member : Global.getCombatEngine().getFleetManager(side).getDeployedCopyDFM()) {
+                if (member.getShip().getHullSize() == ShipAPI.HullSize.FIGHTER
+                    || member.isAlly() || member.isStationModule() || !member.getShip().isAlive()) {
+                    continue;
+                }
+                if (member.getShip().getVariant().hasHullMod("escort_package")
+                        || (NA_SettingsListener.na_autoescort_ipdai_frig
+                        && member.getShip().getHullSize() == ShipAPI.HullSize.FRIGATE
+                        && member.getShip().getVariant().hasHullMod(HullMods.POINTDEFENSEAI)
+                )
+                        && !assignedEscorts.containsKey(member)) {
+                    // we do this first so that ships with the bottom packages don't accidentally top
+                    needAssignment.put(member, null);
+                } else {
+                    CombatFleetManagerAPI.AssignmentInfo info = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip());
+                    if (info != null && (info.getType() == CombatAssignmentType.LIGHT_ESCORT
+                        || info.getType() == CombatAssignmentType.MEDIUM_ESCORT
+                        || info.getType() == CombatAssignmentType.HEAVY_ESCORT)) {
+                        //alreadyHaveEscort.put(member, info);
+                        for (DeployedFleetMemberAPI escort : info.getAssignedMembers()) {
+                            assignedEscorts.put(escort, info);
+                        }
+                    } else noEscort.put(member, null);
+
+                }
+            }
+
+            for (DeployedFleetMemberAPI member : Global.getCombatEngine().getFleetManager(side).getDeployedCopyDFM()) {
+                ShipAPI.HullSize[] sizes = {ShipAPI.HullSize.CRUISER, ShipAPI.HullSize.DESTROYER, ShipAPI.HullSize.FRIGATE};
+                for (ShipAPI.HullSize size : sizes) {
+                    // Start with cruisers, then move down
+                    if (needAssignment.containsKey(member) && member.getShip().getHullSize() == size) {
+                        DeployedFleetMemberAPI toEscort = null;
+                        // we find the first eligible ship that needs an escort
+                        ShipAPI.HullSize sizeOfEscort = member.getShip().getHullSize();
+                        INNER:
+                        for (DeployedFleetMemberAPI eligible : Global.getCombatEngine().getFleetManager(side).getDeployedCopyDFM()) {
+                            if (noEscort.containsKey(eligible)) {
+                                if ((sizeOfEscort == ShipAPI.HullSize.FRIGATE && eligible.getShip().getHullSize() != ShipAPI.HullSize.FRIGATE
+                                )
+                                        || (sizeOfEscort == ShipAPI.HullSize.DESTROYER && (
+                                        eligible.getShip().getHullSize() == ShipAPI.HullSize.CRUISER
+                                                || eligible.getShip().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP
+                                ))
+                                        || (sizeOfEscort == ShipAPI.HullSize.CRUISER && (
+                                        eligible.getShip().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP
+                                ))
+                                ) {
+                                    // needs to be faster
+                                    if (eligible.getShip().getMaxSpeed() < member.getShip().getMaxSpeed()) {
+                                        toEscort = eligible;
+                                        noEscort.remove(eligible);
+                                        break INNER;
+                                    }
+                                }
+
+                            }
+                        }
+                        if (toEscort != null) {
+                            CombatAssignmentType AType = toEscort.getShip().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP ? CombatAssignmentType.HEAVY_ESCORT
+                                    : toEscort.getShip().getHullSize() == ShipAPI.HullSize.CRUISER ? CombatAssignmentType.MEDIUM_ESCORT
+                                    : CombatAssignmentType.LIGHT_ESCORT;
+
+                            CombatFleetManagerAPI.AssignmentInfo assignment = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).createAssignment(
+                                    AType,
+                                    toEscort, true
+                            );
+                            Global.getCombatEngine().getFleetManager(side).getTaskManager(false).setAssignmentWeight(assignment, 0f);
+                            for (DeployedFleetMemberAPI fakeEscort: assignment.getAssignedMembers()) {
+                                Object[] arr = new Object[1]; arr[0] = fakeEscort;
+                                ReflectionUtils.invoke("cancelDirectOrdersForMember", Global.getCombatEngine().getFleetManager(side).getTaskManager(false), arr, null, 1);
+                            }
+                            assignment.getAssignedMembers().clear();
+                            Global.getCombatEngine().getFleetManager(side).getTaskManager(false).giveAssignment(member, assignment, true);
+
+                            needAssignment.remove(member);
+                        }
+                    }
+                }
+            }
+
+        }
     }
 
     @Override
