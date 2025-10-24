@@ -496,14 +496,16 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         }
 
 
-        float YY = Global.getSettings().getScreenHeightPixels() - NA_SettingsListener.tacticalRenderHeightOffset - (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0);
+        float uiscale = Math.max(1, Global.getSettings().getScreenScaleMult());
+
+        float YY = Global.getSettings().getScreenHeightPixels() / uiscale - NA_SettingsListener.tacticalRenderHeightOffset - (side == 1 ? NA_SettingsListener.tacticalRenderHeightOffsetEnemy : 0);
         float XXstart = !flip ? NA_SettingsListener.tacticalRenderSideOffset + (side == 1 ? NA_SettingsListener.tacticalRenderSideOffsetEnemy : 0):
-                Global.getSettings().getScreenWidthPixels() - NA_SettingsListener.tacticalRenderSideOffset - w - (side == 1 ? NA_SettingsListener.tacticalRenderSideOffsetEnemy : 0);
+                Global.getSettings().getScreenWidthPixels() / uiscale - NA_SettingsListener.tacticalRenderSideOffset - w - (side == 1 ? NA_SettingsListener.tacticalRenderSideOffsetEnemy : 0);
 
 
         float TEXTOFF = 30 + h/2;
         float TEXTHEIGHT = 20;
-        float textSpacing = 100;
+        float textSpacing = 100*uiscale;
         float TEXTXOFF = !flip ? 0 : -2*textSpacing;
         float TITLEXOFF = !flip ? 12 : 12;
         float sineAmt = (float) Math.sin(9f * engine.getTotalElapsedTime(true) % (2*Math.PI));
