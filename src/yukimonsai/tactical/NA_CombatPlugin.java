@@ -30,6 +30,8 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         GetShipIconListeners.add(new GetShipIconModuleExcluder());
         GetShipIconListeners.add(new GetShipIconDeadExcluder());
         GetShipIconListeners.add(new GetShipIconAllyExcluder());
+        GetShipIconListeners.add(new GetShipIconFighterExcluder());
+
     }
     public static List<DisplayDrawListener> DisplayDrawListeners = new ArrayList<DisplayDrawListener>();
     static {
@@ -159,10 +161,16 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                             if (drawYukiTacticalDisplay(e.isMouseDownEvent() ? InputType.CLICK : InputType.HOLD, e, events, 1)) {cancel = e; break;}
 
 
-                            if (e.isMouseDownEvent())
+                            if (e.isMouseDownEvent()) {
+                                if (commandMode != CommandMode.NONE)
+                                    Global.getCombatEngine().getCombatUI().setDisablePlayerShipControlOneFrame(true);
                                 commandMode = CommandMode.NONE;
-                        } else if (!e.isLMBDownEvent() && e.isMouseDownEvent())
+                                }
+                        } else if (!e.isLMBDownEvent() && e.isMouseDownEvent()) {
+                            if (commandMode != CommandMode.NONE)
+                                Global.getCombatEngine().getCombatUI().setDisablePlayerShipControlOneFrame(true);
                             commandMode = CommandMode.NONE;
+                        }
 
                     }
                     if (cancel != null) {
