@@ -234,11 +234,14 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                 )
                         && !assignedEscorts.containsKey(member)) {
                     // we do this first so that ships with the bottom packages don't accidentally top
-                    needAssignment.put(member, null);
-                } else {
                     CombatFleetManagerAPI.AssignmentInfo info = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(member.getShip());
+                    if (info == null)
+                        needAssignment.put(member, null);
+                } else {
+                    CombatFleetManagerAPI.AssignmentInfo info = Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentInfoForTarget(member);
                     if (info != null && (info.getType() == CombatAssignmentType.LIGHT_ESCORT
                         || info.getType() == CombatAssignmentType.MEDIUM_ESCORT
+                        || info.getType() == CombatAssignmentType.DEFEND
                         || info.getType() == CombatAssignmentType.HEAVY_ESCORT)) {
                         //alreadyHaveEscort.put(member, info);
                         for (DeployedFleetMemberAPI escort : info.getAssignedMembers()) {
@@ -263,11 +266,11 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                                 if ((sizeOfEscort == ShipAPI.HullSize.FRIGATE && eligible.getShip().getHullSize() != ShipAPI.HullSize.FRIGATE
                                 )
                                         || (sizeOfEscort == ShipAPI.HullSize.DESTROYER && (
-                                        eligible.getShip().getHullSize() == ShipAPI.HullSize.CRUISER
+                                                eligible.getShip().getHullSize() == ShipAPI.HullSize.CRUISER
                                                 || eligible.getShip().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP
                                 ))
                                         || (sizeOfEscort == ShipAPI.HullSize.CRUISER && (
-                                        eligible.getShip().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP
+                                            eligible.getShip().getHullSize() == ShipAPI.HullSize.CAPITAL_SHIP
                                 ))
                                 ) {
                                     // needs to be faster
@@ -290,10 +293,10 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
                                     toEscort, true
                             );
                             Global.getCombatEngine().getFleetManager(side).getTaskManager(false).setAssignmentWeight(assignment, 0f);
-                            for (DeployedFleetMemberAPI fakeEscort: assignment.getAssignedMembers()) {
+                            /*for (DeployedFleetMemberAPI fakeEscort: assignment.getAssignedMembers()) {
                                 Object[] arr = new Object[1]; arr[0] = fakeEscort;
                                 ReflectionUtils.invoke("cancelDirectOrdersForMember", Global.getCombatEngine().getFleetManager(side).getTaskManager(false), arr, null, 1);
-                            }
+                            }*/
                             assignment.getAssignedMembers().clear();
                             Global.getCombatEngine().getFleetManager(side).getTaskManager(false).giveAssignment(member, assignment, true);
 

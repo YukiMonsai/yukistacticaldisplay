@@ -412,14 +412,14 @@ public class ShipIconImpl implements ShipIcon {
                     if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship) == null
                             || !Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getType().equals(CombatAssignmentType.RETREAT)) {
 
-                        if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship) != null) {
+                        /*if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship) != null) {
                             Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getAssignedMembers().remove(ship);
                             if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getAssignedMembers().isEmpty()) {
                                 Global.getCombatEngine().getFleetManager(side).getTaskManager(false).removeAssignment(
                                         Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship));
                             }
 
-                        }
+                        }*/
 
 
                         Global.getCombatEngine().getFleetManager(side).getTaskManager(false).orderRetreat(member, true, false);
