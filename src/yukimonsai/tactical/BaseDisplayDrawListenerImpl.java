@@ -17,14 +17,19 @@ public class BaseDisplayDrawListenerImpl implements DisplayDrawListener {
     @Override
     public boolean draw(NA_CombatPlugin.InputType input, int side, boolean flip, boolean flipv, float XX, float YY, float textxoff, float textoff, float textheight, float titlexoff, float textSpacing, InputEventAPI e) {
         if (!NA_SettingsListener.na_combatui_nocontrol) {
+            float uiscale = Math.max(1, Global.getSettings().getScreenScaleMult());
             if (Global.getCombatEngine().getPlayerShip().getShipTarget() != null
                     && Global.getCombatEngine().getPlayerShip().getShipTarget().getOwner() == side
                     && Global.getCombatEngine().getPlayerShip().getShipTarget().getName() != null) {
-                MagicUI.addText(null, Global.getCombatEngine().getPlayerShip().getShipTarget().getName(), TEXT_COLOR_HIGHLIGHT, new Vector2f(XX+ textxoff + titlexoff, YY + textoff + textheight), false);
+                MagicUI.addText(null, Global.getCombatEngine().getPlayerShip().getShipTarget().getName(), TEXT_COLOR_HIGHLIGHT, new Vector2f((XX+ textxoff + titlexoff)/uiscale, (YY + textoff + textheight)/uiscale), false);
             }
+
+            float mx = e == null ? 0 : e.getX() / uiscale;
+            float my = e == null ? 0 : e.getY() / uiscale;
+
             if (input != NA_CombatPlugin.InputType.NO_INPUT && side == 0) {
-                if (e.getX() > XX+ textxoff && e.getX() < XX+ textxoff + textSpacing
-                        && e.getY() > YY + textoff - textheight && e.getY() < YY + textoff) {
+                if (mx > (XX+ textxoff)/uiscale && mx < (XX+ textxoff + textSpacing)/uiscale
+                        && my > (YY + textoff - textheight)/uiscale && my < (YY + textoff)/uiscale) {
                     if (input == NA_CombatPlugin.InputType.CLICK ) {
                         if (NA_CombatPlugin.commandMode != NA_CombatPlugin.CommandMode.RETREAT_COMMAND)
                             NA_CombatPlugin.commandMode = NA_CombatPlugin.CommandMode.RETREAT_COMMAND;
@@ -34,8 +39,8 @@ public class BaseDisplayDrawListenerImpl implements DisplayDrawListener {
                     }
 
                     return true;
-                } else if (e.getX() > XX+ textxoff + textSpacing && e.getX() < XX+ textxoff + 2 * textSpacing
-                        && e.getY() > YY + textoff - textheight && e.getY() < YY + textoff) {
+                } else if (mx > (XX+ textxoff + textSpacing)/uiscale && mx < (XX+ textxoff + 2 * textSpacing)/uiscale
+                        && my > (YY + textoff - textheight)/uiscale && my < (YY + textoff)/uiscale) {
                     if (input == NA_CombatPlugin.InputType.CLICK ) {
 
                         if (NA_CombatPlugin.commandMode != NA_CombatPlugin.CommandMode.ESCORT_COMMAND)
@@ -46,8 +51,8 @@ public class BaseDisplayDrawListenerImpl implements DisplayDrawListener {
                     }
 
                     return true;
-                } else if (e.getX() > XX+ textxoff + 2*textSpacing && e.getX() < XX+ textxoff + 3 * textSpacing
-                        && e.getY() > YY + textoff - textheight && e.getY() < YY + textoff) {
+                } else if (mx > (XX+ textxoff + 2*textSpacing)/uiscale && mx < (XX+ textxoff + 3 * textSpacing)/uiscale
+                        && my > (YY + textoff - textheight)/uiscale && my < (YY + textoff)/uiscale) {
                     if (input == NA_CombatPlugin.InputType.CLICK ) {
 
                         if (NA_CombatPlugin.commandMode != NA_CombatPlugin.CommandMode.SEARCHANDDESTROY_COMMAND)
@@ -68,26 +73,30 @@ public class BaseDisplayDrawListenerImpl implements DisplayDrawListener {
                 boolean hl_esc = false;
                 boolean hl_snd = false;
 
-                if (Global.getSettings().getMouseX() > XX+ textxoff && Global.getSettings().getMouseX() < XX+ textxoff + textSpacing
-                        && Global.getSettings().getMouseY() > YY + textoff - textheight && Global.getSettings().getMouseY() < YY + textoff) {
+
+                mx = Global.getSettings().getMouseX() / uiscale;
+                my = Global.getSettings().getMouseY() / uiscale;
+                
+                if (mx > (XX+ textxoff)/uiscale && mx < (XX+ textxoff + textSpacing)/uiscale
+                        && my > (YY + textoff)/uiscale - textheight && my < (YY + textoff)/uiscale) {
                     hl_ret = true;
-                } else if (Global.getSettings().getMouseX() > XX+ textxoff + textSpacing && Global.getSettings().getMouseX() < XX+ textxoff + 2 * textSpacing
-                        && Global.getSettings().getMouseY() > YY + textoff - textheight && Global.getSettings().getMouseY() < YY + textoff) {
+                } else if (mx > (XX+ textxoff + textSpacing)/uiscale && mx < (XX+ textxoff + 2 * textSpacing)/uiscale
+                        && my > (YY + textoff)/uiscale - textheight && my < (YY + textoff)/uiscale) {
                     hl_esc = true;
-                } else if (Global.getSettings().getMouseX() > XX+ textxoff + 2*textSpacing && Global.getSettings().getMouseX() < XX+ textxoff + 3 * textSpacing
-                        && Global.getSettings().getMouseY() > YY + textoff - textheight && Global.getSettings().getMouseY() < YY + textoff) {
+                } else if (mx > (XX+ textxoff + 2*textSpacing)/uiscale && mx < (XX+ textxoff + 3 * textSpacing)/uiscale
+                        && my > (YY + textoff - textheight)/uiscale && my < (YY + textoff)/uiscale) {
                     hl_snd = true;
                 }
 
                 if (NA_SettingsListener.na_combatui_copyright && Global.getCombatEngine().getPlayerShip().getShipTarget() == null
                         || NA_SettingsListener.na_combatui_copyright && Global.getCombatEngine().getPlayerShip().getShipTarget().getOwner() != 0)
-                    MagicUI.addText(null, NA_CombatPlugin.title, textColor_OFF, new Vector2f(XX+ textxoff + titlexoff, YY + textoff + textheight), false);
+                    MagicUI.addText(null, NA_CombatPlugin.title, textColor_OFF, new Vector2f((XX+ textxoff + titlexoff)/uiscale, (YY + textoff + textheight)/uiscale), false);
                 MagicUI.addText(null, "Retreat", NA_CombatPlugin.commandMode == NA_CombatPlugin.CommandMode.RETREAT_COMMAND ? textColor_ON : hl_ret ? textColor_HL : textColor_OFF,
-                        new Vector2f(XX+ textxoff, YY + textoff), false);
+                        new Vector2f((XX+ textxoff)/uiscale, (YY + textoff)/uiscale), false);
                 MagicUI.addText(null, "Escort", NA_CombatPlugin.commandMode == NA_CombatPlugin.CommandMode.ESCORT_COMMAND ? textColor_ON : hl_esc ? textColor_HL : textColor_OFF,
-                        new Vector2f(XX+ textxoff + textSpacing, YY + textoff), false);
+                        new Vector2f((XX+ textxoff + textSpacing)/uiscale, (YY + textoff)/uiscale), false);
                 MagicUI.addText(null, "S&D", NA_CombatPlugin.commandMode == NA_CombatPlugin.CommandMode.SEARCHANDDESTROY_COMMAND ? textColor_ON : hl_snd ? textColor_HL : textColor_OFF,
-                        new Vector2f(XX+ textxoff + 2 * textSpacing, YY + textoff), false);
+                        new Vector2f((XX+ textxoff + 2 * textSpacing)/uiscale, (YY + textoff)/uiscale), false);
 
             }
         }

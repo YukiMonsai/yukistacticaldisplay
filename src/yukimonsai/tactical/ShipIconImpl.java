@@ -85,6 +85,7 @@ public class ShipIconImpl implements ShipIcon {
     @Override
     public void render(boolean flip, boolean flipv, float XX, float YY, float w, float h, HashMap<String, CombatFleetManagerAPI.AssignmentInfo> assignmentList, boolean withText, float sineAmt, boolean UIUpdate, boolean DataUpdate) {
         // icon
+        float uiscale = Math.max(1, Global.getSettings().getScreenScaleMult());
         ship = member.getShip();
         int side = ship.getOwner();
         SpriteAPI sprite = Global.getSettings().getSprite(member.getMember().getHullSpec().getSpriteName());
@@ -213,7 +214,7 @@ public class ShipIconImpl implements ShipIcon {
 
         float yyy = 0;
         if (ship == Global.getCombatEngine().getPlayerShip()) {
-            MagicUI.addText(ship, "you", YOU_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+            MagicUI.addText(ship, "you", YOU_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
             yyy -= 9;
         } else if (Global.getCombatEngine().getPlayerShip() != null && Global.getCombatEngine().getPlayerShip().getShipTarget() != null
                 && Global.getCombatEngine().getPlayerShip().getShipTarget().getId().equals(ship.getId())) {
@@ -229,36 +230,36 @@ public class ShipIconImpl implements ShipIcon {
         }
         if (side == 0 || !NA_SettingsListener.na_combatui_noenemyinfo) {
             if (snd) {
-                MagicUI.addText(ship, "S&D", SND_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                MagicUI.addText(ship, "S&D", SND_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                 yyy -= 9;
             }
             if (!NA_SettingsListener.na_combatui_info && assignmentList.containsKey(ship.getId())) {
                 if (assignmentList.get(ship.getId()).getAssignedMembers().isEmpty()) {
-                    MagicUI.addText(ship, "-", ESCORT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                    MagicUI.addText(ship, "-", ESCORT_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                 } else
                 if (assignmentList.get(ship.getId()).getType().equals(CombatAssignmentType.MEDIUM_ESCORT))
-                    MagicUI.addText(ship, "M", ESCORT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                    MagicUI.addText(ship, "M", ESCORT_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                 else if (assignmentList.get(ship.getId()).getType().equals(CombatAssignmentType.HEAVY_ESCORT))
-                    MagicUI.addText(ship, "H", ESCORT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                    MagicUI.addText(ship, "H", ESCORT_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                 else if (assignmentList.get(ship.getId()).getType().equals(CombatAssignmentType.LIGHT_ESCORT))
-                    MagicUI.addText(ship, "L", ESCORT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                    MagicUI.addText(ship, "L", ESCORT_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                 yyy -= 9;
             } else if (!NA_SettingsListener.na_combatui_info) {
                 if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship) != null
                         && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getType() == CombatAssignmentType.DEFEND) {
-                    MagicUI.addText(ship, "DEF", D_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                    MagicUI.addText(ship, "DEF", D_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                     yyy -= 9;
                 } else if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship) != null
                         && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getType() == CombatAssignmentType.CAPTURE) {
-                    MagicUI.addText(ship, "CAP", CAP_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                    MagicUI.addText(ship, "CAP", CAP_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                     yyy -= 9;
                 } else if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship) != null
                         && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getType() == CombatAssignmentType.CONTROL) {
-                    MagicUI.addText(ship, "CON", D_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                    MagicUI.addText(ship, "CON", D_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                     yyy -= 9;
                 } else if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship) != null
                         && Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getType() == CombatAssignmentType.ENGAGE) {
-                    MagicUI.addText(ship, "eng", ENGAGE_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                    MagicUI.addText(ship, "eng", ENGAGE_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                     yyy -= 9;
                 }
 
@@ -273,14 +274,14 @@ public class ShipIconImpl implements ShipIcon {
             if (Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getType().equals(CombatAssignmentType.LIGHT_ESCORT)
                     || Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getType().equals(CombatAssignmentType.MEDIUM_ESCORT)
                     || Global.getCombatEngine().getFleetManager(side).getTaskManager(false).getAssignmentFor(ship).getType().equals(CombatAssignmentType.HEAVY_ESCORT)) {
-                MagicUI.addText(ship, "esc", ESCORT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                MagicUI.addText(ship, "esc", ESCORT_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                 yyy -= 9;
             }
         }
 
         if (side == 0 || !NA_SettingsListener.na_combatui_noenemyinfo) {
             if (!NA_SettingsListener.na_combatui_info && retreating) {
-                MagicUI.addText(ship, (w*1.25f < 55) ? ((w*1.25f <= 46) ? "ret." : "retr.") : "retreat", RETREAT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                MagicUI.addText(ship, (w*1.25f < 55) ? ((w*1.25f <= 46) ? "ret." : "retr.") : "retreat", RETREAT_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                 yyy -= 9;
             } else if (!NA_SettingsListener.na_combatui_info) {
                 if (sineAmt > 0 && ship != Global.getCombatEngine().getPlayerShip()
@@ -295,8 +296,8 @@ public class ShipIconImpl implements ShipIcon {
                             || ship.getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.HAS_INCOMING_DAMAGE)
                             || ship.getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.RUN_QUICKLY)
                             || ship.getShipAI().getAIFlags().hasFlag(ShipwideAIFlags.AIFlags.TURN_QUICKLY))
-                        MagicUI.addText(ship, "!!!", ALERT_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
-                    else MagicUI.addText(ship, "!", ENGAGE_COLOR, new Vector2f(XX + 6, YY + h + yyy), false);
+                        MagicUI.addText(ship, "!!!", ALERT_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
+                    else MagicUI.addText(ship, "!", ENGAGE_COLOR, new Vector2f((XX + 6)/uiscale, (YY + h + yyy)/uiscale), false);
                     yyy -= 9;
                 }
             }
@@ -357,8 +358,12 @@ public class ShipIconImpl implements ShipIcon {
     @Override
     public boolean handleInput(boolean flip, boolean flipv, float XX, float YY, float w, float h, HashMap<String, CombatFleetManagerAPI.AssignmentInfo> assignmentList, InputEventAPI e) {
         // input
-        if (e.getX() > XX && e.getX() < XX + w
-                && e.getY() > YY && e.getY() < YY + h) {
+
+        float mx = e == null ? 0 : e.getX();// / uiscale;
+        float my = e == null ? 0 : e.getY();// / uiscale;
+        
+        if (mx > XX && mx < XX + w
+                && my > YY && my < YY + h) {
             CombatEngineAPI engine = Global.getCombatEngine();
             int side = ship.getOwner();
             NA_CombatPlugin.CommandMode commandMode = NA_CombatPlugin.commandMode;
@@ -469,8 +474,12 @@ public class ShipIconImpl implements ShipIcon {
     @Override
     public boolean handleHold(boolean flip, boolean flipv, float XX, float YY, float w, float h, HashMap<String, CombatFleetManagerAPI.AssignmentInfo> assignmentList, InputEventAPI e) {
         // input
-        if (e.getX() > XX && e.getX() < XX + w
-                && e.getY() > YY && e.getY() < YY + h) {
+
+        float uiscale = Math.max(1, Global.getSettings().getScreenScaleMult());
+        float mx = e == null ? 0 : e.getX() / uiscale;
+        float my = e == null ? 0 : e.getY() / uiscale;
+        if (mx > XX && mx < XX + w
+                && my > YY && my < YY + h) {
             //e.consume(); //events.remove(e);
             return true;
         }

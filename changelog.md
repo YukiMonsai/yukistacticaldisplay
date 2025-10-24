@@ -1,3 +1,10 @@
+1.1.1
+- Fixed misaligned display with UI scaling enabled
+
+1.1.0
+- Added auto escort feature
+- Fixed a few bugs
+
 1.0.5
 - Added dynamic size
 - Fixed some bugs with KoL modules showing up
