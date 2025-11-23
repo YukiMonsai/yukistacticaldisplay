@@ -1,3 +1,6 @@
+1.1.2
+- Fixed misaligned display when horizontal flip is disabled
+
 1.1.1
 - Fixed misaligned display with UI scaling enabled
 
