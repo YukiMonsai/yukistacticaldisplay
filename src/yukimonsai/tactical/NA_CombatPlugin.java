@@ -547,17 +547,6 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
             YY -= (Yspacing + h) * Math.max(count-1, 0);
             YY += (h) * Math.max(count-1, 0);
 
-        } else {
-            for (List<DeployedFleetMemberAPI> list : display) {
-                if (list.isEmpty()) {sizedUpTicks--; continue;}
-
-                if (shipSizeScale > 0 && sizedUpTicks >= 0) {
-                    //YY += 0.5*shipSizeScale * (sizedUpTicks);
-                    YY -= shipSizeScale * Math.max(0f, sizedUpTicks);
-                }
-                count++;
-                sizedUpTicks--;
-            }
         }
 
         for (DisplayDrawListener listener : DisplayDrawListeners) {
@@ -578,7 +567,7 @@ public class NA_CombatPlugin implements EveryFrameCombatPlugin {
         for (List<DeployedFleetMemberAPI> list : display) {
 
 
-            XX = XXstart + (flip ? -1 : 0) * sizedUpTicks * (shipSizeScale);
+            XX = XXstart + (flip ? -1 : 1) * sizedUpTicks * (shipSizeScale);
 
             w = w_orig;
             h = h_orig;
